@@ -1,0 +1,47 @@
+[project]
+name = "pip-inside"
+version = "0.1.0"
+description = ""
+authors = [
+    { name = "orctom", email = "orctom@gmail.com" },
+]
+readme = "README.md"
+license = {file = "LICENSE"}
+requires-python = ">=3.8"
+dependencies = [
+    "flit_core>=3.8.0",
+    "tomlkit",
+    "requests",
+    "click",
+    "inquirerpy",
+    "rich",
+]
+
+[project.urls]
+homepage = "https://github.com/orctom/hao"
+repository = "https://github.com/orctom/hao"
+
+[project.scripts]
+pi = "pip_inside.main:cli"
+
+[build-system]
+requires = ["flit_core>=3.8.0,<4"]
+build-backend = "flit_core.buildapi"
+
+[tool.black]
+line-length = 135
+target-version = ["py38"]
+exclude = """
+/(
+    \\.git
+  | \\.hg
+  | \\.mypy_cache
+  | \\.tox
+  | \\.venv
+  | _build
+  | buck-out
+  | build
+  | dist
+  | data
+)/
+"""
