@@ -8,6 +8,7 @@ from .commands.add import handle_add
 from .commands.build import handle_build
 from .commands.init import handle_init
 from .commands.install import handle_install
+from .commands.publish import handle_publish
 from .commands.remove import handle_remove
 from .utils import packages, spinner, version_specifies
 
@@ -23,20 +24,6 @@ def init(v: bool):
     """Init project in current directory"""
     try:
         handle_init()
-    except Exception as e:
-        click.secho(e, fg='red')
-        if v:
-            import traceback
-            click.secho(traceback.format_exc(), fg='red')
-
-
-@cli.command()
-@click.option('--dist', default='dist', show_default=True, help='build target directory')
-@click.option('-v', 'v', is_flag=True, default=False, help="verbovse")
-def build(dist: str, v: bool):
-    """Build the wheel and sdist"""
-    try:
-        handle_build(dist)
     except Exception as e:
         click.secho(e, fg='red')
         if v:
@@ -130,6 +117,36 @@ def install(groups: List[str], v: bool):
         elif len(groups) == 0:
             groups = ['main']
         handle_install(groups)
+    except Exception as e:
+        click.secho(e, fg='red')
+        if v:
+            import traceback
+            click.secho(traceback.format_exc(), fg='red')
+
+
+@cli.command()
+@click.option('--dist', default='dist', show_default=True, help='build target directory')
+@click.option('-v', 'v', is_flag=True, default=False, help="verbovse")
+def build(dist: str, v: bool):
+    """Build the wheel and sdist"""
+    try:
+        handle_build(dist)
+    except Exception as e:
+        click.secho(e, fg='red')
+        if v:
+            import traceback
+            click.secho(traceback.format_exc(), fg='red')
+
+
+@cli.command()
+@click.option('-r', '--repository', default='pypi', show_default=True, help='target repository')
+@click.option('--dist', default='dist', show_default=True, help='build target directory')
+@click.option('-i', 'interactive', is_flag=True, default=False, help="interactive mode")
+@click.option('-v', 'v', is_flag=True, default=False, help="verbovse")
+def publish(repository: str, dist: str, interactive: bool, v: bool):
+    """Publish the wheel and sdist to remote repository"""
+    try:
+        handle_publish(repository, dist=dist, interactive=interactive)
     except Exception as e:
         click.secho(e, fg='red')
         if v:
