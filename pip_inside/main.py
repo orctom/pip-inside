@@ -18,21 +18,30 @@ def cli():
 
 
 @cli.command()
-def init():
+@click.option('-v', 'v', is_flag=True, default=False, help="verbovse")
+def init(v: bool):
     """Init project in current directory"""
     try:
         handle_init()
     except Exception as e:
         click.secho(e, fg='red')
+        if v:
+            import traceback
+            click.secho(traceback.format_exc(), fg='red')
 
 
 @cli.command()
-def build():
+@click.option('--dist', default='dist', show_default=True, help='build target directory')
+@click.option('-v', 'v', is_flag=True, default=False, help="verbovse")
+def build(dist: str, v: bool):
     """Build the wheel and sdist"""
     try:
-        handle_build()
+        handle_build(dist)
     except Exception as e:
         click.secho(e, fg='red')
+        if v:
+            import traceback
+            click.secho(traceback.format_exc(), fg='red')
 
 
 @cli.command()
@@ -96,7 +105,8 @@ def add(name, group, interactive: bool, v: bool):
 @cli.command()
 @click.argument('name', required=False, type=str)
 @click.option('--group', default='main', show_default=True, help='dependency group')
-def remove(name, group):
+@click.option('-v', 'v', is_flag=True, default=False, help="verbovse")
+def remove(name, group, v: bool):
     """Remove a package from project dependencies"""
     try:
         if name is None:
@@ -104,11 +114,15 @@ def remove(name, group):
         handle_remove(name, group)
     except Exception as e:
         click.secho(e, fg='red')
+        if v:
+            import traceback
+            click.secho(traceback.format_exc(), fg='red')
 
 
 @cli.command()
 @click.option('--groups', multiple=True, default=['main'], show_default=True, help='dependency groups')
-def install(groups: List[str]):
+@click.option('-v', 'v', is_flag=True, default=False, help="verbovse")
+def install(groups: List[str], v: bool):
     """Install project dependencies by groups"""
     try:
         if len(groups) == 1:
@@ -118,6 +132,9 @@ def install(groups: List[str]):
         handle_install(groups)
     except Exception as e:
         click.secho(e, fg='red')
+        if v:
+            import traceback
+            click.secho(traceback.format_exc(), fg='red')
 
 
 if __name__ == "__main__":
