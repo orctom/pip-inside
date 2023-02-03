@@ -4,11 +4,12 @@ from typing import List
 
 import click
 
-from pip_inside.utils import pyproject
+from pip_inside.utils.pyproject import PyProject
 
 
 def handle_install(groups: List[str]):
     try:
+        pyproject = PyProject()
         dependencies = []
         for group in groups:
             deps = pyproject.get_dependencies(group)

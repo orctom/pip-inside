@@ -1,7 +1,9 @@
 import collections
 import re
+import subprocess
+import sys
 from datetime import datetime
-from typing import List, Union
+from typing import Union
 
 import requests
 
@@ -19,6 +21,8 @@ P_NAME = re.compile(r"<span class=\"package-snippet__name\">(.+)</span>")
 P_VERSION = re.compile(r".*<span class=\"package-snippet__version\">(.+)</span>")
 P_RELEASE = re.compile(r"<time\s+datetime=\"([^\"]+)\"")
 P_DESCRIPTION = re.compile(r".*<p class=\"package-snippet__description\">(.+)</p>")
+
+P_INDEX_VERSIONS = re.compile('(?<=Available versions:)([a-zA-Z0-9., ]+)(?=\\n)')
 
 
 def check_version(package_name: str) -> Union[str, bool]:
@@ -54,3 +58,16 @@ def search(name: str):
         pkg(name, fmt(name, version, release, desc))
         for name, version, release, desc in zip(names, versions, releases, descriptions)
     ]
+
+
+def versions(name: str):
+    try:
+        cmd = [sys.executable, '-m', 'pip', 'index', 'versions', name]
+        process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        out, _ = process.communicate()
+        m = P_INDEX_VERSIONS.search(out.decode())
+        if m is None:
+            return None
+        return [v.strip() for v in m.group().strip().split(',')]
+    except subprocess.CalledProcessError:
+        pass
