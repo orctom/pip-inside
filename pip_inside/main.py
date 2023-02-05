@@ -4,7 +4,7 @@ import click
 from InquirerPy import inquirer
 from InquirerPy.base.control import Choice
 
-from . import Aborted
+from . import Aborted, __version__
 from .commands.add import handle_add
 from .commands.build import handle_build
 from .commands.init import handle_init
@@ -14,9 +14,16 @@ from .commands.remove import handle_remove
 from .utils import packages, spinner, version_specifies
 
 
-@click.group()
-def cli():
-    pass
+@click.group(invoke_without_command=True)
+@click.option('-V', '--version', is_flag=True, default=False, help="show version")
+@click.pass_context
+def cli(ctx, version: bool):
+    if ctx.invoked_subcommand:
+        return
+    if version:
+        click.secho(f"pip-inside version: {__version__}")
+    else:
+        click.secho(ctx.get_help())
 
 
 @cli.command()
