@@ -1,12 +1,12 @@
 [project]
 name = "pip-inside"
-version = "0.1.0"
 description = ""
 authors = [
     { name = "orctom", email = "orctom@gmail.com" },
 ]
 readme = "README.md"
 license = {file = "LICENSE"}
+dynamic = ['version']
 requires-python = ">=3.8"
 dependencies = [
     "flit_core>=3.8.0",

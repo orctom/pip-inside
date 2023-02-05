@@ -1,7 +1,6 @@
 import configparser
 import os
 from types import SimpleNamespace
-from urllib.parse import urlparse
 
 import click
 import requests
@@ -13,20 +12,28 @@ from pip_inside.utils import spinner
 
 from .build import build_package
 
-PYPI = 'https://upload.pypi.org/legacy/'
-TESTPYPI = 'https://test.pypi.org/legacy/'
-PYPI_URLS = {
-    '': PYPI,
-    None: PYPI,
-    'pypi': PYPI,
-    'testpypi': TESTPYPI,
+API_PYPI = 'https://upload.pypi.org/legacy/'
+API_TESTPYPI = 'https://test.pypi.org/legacy/'
+WEB_PYPI = "https://pypi.org/"
+WEB_TESTPYPI = "https://test.pypi.org/"
+NAME_TO_API = {
+    '': API_PYPI,
+    None: API_PYPI,
+    'pypi': API_PYPI,
+    'testpypi': API_TESTPYPI,
 }
-SWITCH_TO_HTTPS = (
-    "http://pypi.python.org/",
-    "http://testpypi.python.org/",
-    "http://upload.pypi.org/",
-    "http://upload.pypi.io/",
-)
+API_NORMALIZE = {
+    "http://pypi.python.org/": API_PYPI,
+    "https://pypi.python.org/": API_PYPI,
+    "http://test.pypi.org/": API_TESTPYPI,
+    "https://test.pypi.org/": API_TESTPYPI,
+    "http://testpypi.python.org/": API_TESTPYPI,
+    "https://testpypi.python.org/": API_TESTPYPI,
+}
+API_TO_WEB = {
+    API_PYPI: WEB_PYPI,
+    API_TESTPYPI: WEB_TESTPYPI
+}
 
 
 def handle_publish(
@@ -47,12 +54,12 @@ def get_credential_from_pypirc(repository: str, config_file: str = '~/.pypirc', 
     cp.read(config_file)
 
     url = cp.get(repository, 'repository', fallback=None)
+    url = NAME_TO_API.get(repository) if url is None else API_NORMALIZE.get(url, url)
     if url is None:
-        url = PYPI_URLS.get(repository, PYPI)
-    if url.startswith(SWITCH_TO_HTTPS):
-        url = 'https' + url[4:]
+        raise Aborted(f"Missing key: 'repository' in '{repository}' section of '{config_file}'")
+
     if url.startswith('http://'):
-        click.secho(f"Insecure repository: {url}, risk of leaking credentials", fg='yellow')
+        click.secho(f"Warning: insecure repository: {url}, has risk of credential leaking risk", fg='yellow')
 
     username = cp.get(repository, 'username', fallback=None)
     password = cp.get(repository, 'password', fallback=None)
@@ -75,25 +82,32 @@ def check_credentials(credential, config_file: str, interactive: bool):
 
 
 def upload_to_repository(pkg, credential):
-    def upload(file, metadata: Metadata):
-        with spinner.Spinner(f"Uploading {file.name} to {credential.name}"):
-            data = build_post_data(metadata, file.suffix)
+    def upload(metadata: Metadata, file, md5_digest, sha256_digest):
+        with spinner.Spinner(f"Uploading {file.name}"):
+            data = build_post_data(metadata, file.suffix, md5_digest, sha256_digest)
             with file.open('rb') as f:
                 content = f.read()
                 files = {'content': (file.name, content)}
             resp = requests.post(credential.url, data=data, files=files, auth=(credential.username, credential.password))
             resp.raise_for_status()
-    upload(pkg.wheel.file, pkg.wheel.builder.metadata)
-    upload(pkg.sdist.file, pkg.sdist.builder.metadata)
+    try:
+        click.secho(f"Publishing to [{credential.name}] ({credential.url})", fg='cyan')
+        upload(pkg.wheel.builder.metadata, pkg.wheel.file, pkg.wheel_md5, pkg.wheel_sha256)
+        upload(pkg.sdist.builder.metadata, pkg.sdist.file, pkg.sdist_md5, pkg.sdist_sha256)
+        check_published_url(credential.url, pkg.wheel.builder.metadata)
+    except requests.exceptions.HTTPError as e:
+        import traceback
+        click.secho(traceback.format_exc(), fg='red')
+        raise Aborted(f"Failed to upload, {e}")
 
 
-def build_post_data(metadata: Metadata, ext: str):
+def build_post_data(metadata: Metadata, ext: str, md5_digest, sha256_digest):
     params_of_ext = {
         '.whl': {'filetype': 'bdist_wheel', 'pyversion': 'py3'},
         '.gz': {'filetype': 'sdist'}
     }
     params_general = {
-        ':action': '',
+        ':action': 'file_upload',
         'name': metadata.name,
         'version': metadata.version,
         'metadata_version': '2.1',
@@ -125,16 +139,17 @@ def build_post_data(metadata: Metadata, ext: str):
         'description_content_type': metadata.description_content_type,
         'provides_extra': metadata.provides_extra,
 
-        'protocol_version': 2,
+        'protocol_version': 1,
+        'md5_digest': md5_digest,
+        'sha256_digest': sha256_digest,
     }
     params = {**params_of_ext.get(ext), **params_general}
     return {k: v for k, v in params.items() if v}
 
 
-def get_published_url(url, name):
-    if url.endswith('/legacy/'):
-        domain = urlparse(url).netloc
-        if domain.startswith('upload.'):
-            domain = domain[7:]
-        return f"https://{domain}/project/{name}/"
-    return f"{url}/{name}"
+def check_published_url(url, meta: Metadata):
+    pypi_web = API_TO_WEB.get(url)
+    if pypi_web:
+        published_url = f"{pypi_web}project/{meta.name}/{meta.version}"
+        click.secho(f"View at: {published_url}", fg='cyan')
+    click.secho('Done', fg='green')
