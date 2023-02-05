@@ -11,6 +11,7 @@ from .commands.init import handle_init
 from .commands.install import handle_install
 from .commands.publish import handle_publish
 from .commands.remove import handle_remove
+from .commands.version import handle_version
 from .utils import packages, spinner, version_specifies
 
 
@@ -172,6 +173,17 @@ def publish(repository: str, dist: str, interactive: bool, v: bool):
         if v:
             import traceback
             click.secho(traceback.format_exc(), fg='red')
+
+
+@cli.command()
+def version():
+    """Show version of current project"""
+    try:
+        handle_version()
+    except Aborted as e:
+        click.secho(e, fg='yellow')
+    except Exception as e:
+        click.secho(e, fg='red')
 
 
 if __name__ == "__main__":
