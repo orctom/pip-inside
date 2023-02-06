@@ -17,8 +17,8 @@ dependencies = [
 ]
 
 [project.urls]
-homepage = "https://github.com/orctom/hao"
-repository = "https://github.com/orctom/hao"
+homepage = "https://github.com/orctom/pip-inside"
+repository = "https://github.com/orctom/pip-inside"
 
 [project.scripts]
 pi = "pip_inside.main:cli"
