@@ -16,13 +16,13 @@ from .utils import packages, spinner, version_specifies
 
 
 @click.group(invoke_without_command=True)
-@click.option('-V', '--version', is_flag=True, default=False, help="show version")
+@click.option('-V', '--version', is_flag=True, default=False, help="show version of this tool")
 @click.pass_context
 def cli(ctx, version: bool):
     if ctx.invoked_subcommand:
         return
     if version:
-        click.secho(f"pip-inside version: {__version__}")
+        click.secho(f"pip-inside: {__version__}")
     else:
         click.secho(ctx.get_help())
 
@@ -179,10 +179,11 @@ def publish(repository: str, dist: str, interactive: bool, v: bool):
 
 
 @cli.command()
-def version():
+@click.option('-s', '--short', is_flag=True, default=False, help="show short version")
+def version(short: bool):
     """Show version of current project"""
     try:
-        handle_version()
+        handle_version(short)
     except Aborted as e:
         click.secho(e, fg='yellow')
     except Exception as e:

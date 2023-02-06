@@ -29,6 +29,7 @@ def build_package(dist):
     with unpacked_tarball(sdist_file) as tmpdir:
         tmp_ini_file = Path(tmpdir, 'pyproject.toml')
         wheel_info = make_wheel_in(tmp_ini_file, dist)
+    
     wheel_data, sdist_data = open(wheel_info.file, 'rb').read(), open(sdist_info.file, 'rb').read()
     wheel_md5 = hashlib.md5(wheel_data).hexdigest()
     wheel_sha256 = hashlib.sha256(wheel_data).hexdigest()
