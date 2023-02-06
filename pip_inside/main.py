@@ -89,8 +89,11 @@ def add(name, group, interactive: bool, v: bool):
                 ).execute()
                 if version == '[set manually]':
                     version = inquirer.text(message="Version:", completer={v: None for v in versions[:15]}).execute().strip()
-                if version:
-                    name = f"{name}{version}" if version_specifies.has_ver_spec(version) else f"{name}=={version}"
+            else:
+                click.secho('Failed to fetch version list, please set version menually', fg='cyan')
+                version = inquirer.text(message="Version:").execute().strip()
+            if version:
+                name = f"{name}{version}" if version_specifies.has_ver_spec(version) else f"{name}=={version}"
             handle_add(name, group)
             prompt = "Add another package (leave blank to exit):"
     except Aborted as e:

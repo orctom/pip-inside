@@ -1,5 +1,6 @@
 import itertools
 import os
+from types import SimpleNamespace
 from typing import List, Union
 
 import tomlkit
@@ -8,18 +9,25 @@ from pip_inside.utils.version_specifies import get_package_name
 
 
 class PyProject:
-    def __init__(self) -> None:
-        self._meta = self.load()
+    def __init__(self, path='pyproject.toml') -> None:
+        self.path = path
+        self._meta = {}
+
+    @classmethod
+    def from_toml(cls, path='pyproject.toml'):
+        pyproject = cls(path)
+        pyproject.load()
+        return pyproject
 
     def load(self):
-        if not os.path.exists('pyproject.toml'):
-            raise ValueError(f"'pyproject.toml' not found in current directory")
+        if not os.path.exists(self.path):
+            raise ValueError(f"'{self.path}' not found")
 
-        with open('pyproject.toml', 'r') as f:
-            return tomlkit.load(f)
+        with open(self.path, 'r') as f:
+            self._meta = tomlkit.load(f)
 
     def flush(self):
-        with open('pyproject.toml', "w") as f:
+        with open(self.path, "w") as f:
             tomlkit.dump(self._meta, f)
 
     def update(self, key: str, value: Union[str, int, float, dict, list]):
@@ -112,3 +120,10 @@ class PyProject:
             return self.get('project.dependencies')
         else:
             return self.get(f"project.optional-dependencies.{group}")
+
+    @staticmethod
+    def get_template():
+        return SimpleNamespace(
+            name=os.path.basename(os.getcwd()),
+            description=''
+        )

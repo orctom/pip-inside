@@ -9,7 +9,7 @@ from pip_inside.utils.pyproject import PyProject
 
 def handle_install(groups: List[str]):
     try:
-        pyproject = PyProject()
+        pyproject = PyProject.from_toml()
         dependencies = []
         for group in groups:
             deps = pyproject.get_dependencies(group)

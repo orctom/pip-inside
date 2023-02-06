@@ -8,7 +8,7 @@ from pip_inside.utils.pyproject import PyProject
 
 def handle_remove(name, group):
     try:
-        pyproject = PyProject()
+        pyproject = PyProject.from_toml()
         if pyproject.remove_dependency(name, group):
             pyproject.flush()
             cmd = [sys.executable, '-m', 'pip', 'uninstall', name, '-y']

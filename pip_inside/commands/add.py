@@ -9,7 +9,7 @@ from pip_inside.utils.pyproject import PyProject
 
 def handle_add(name: str, group: Optional[str]):
     try:
-        pyproject = PyProject()
+        pyproject = PyProject.from_toml()
         name_installed = pyproject.find_dependency(name, group)
         if name_installed:
             if name_installed == name:
