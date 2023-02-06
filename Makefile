@@ -12,12 +12,12 @@ deps:
 
 #: create git tag with the version number in poetry
 release:
-	git tag `pi version`
-	git push origin `pi version`
+	git tag `pi version -s`
+	git push origin `pi version -s`
 
 #: re-create git tag with the version number in poetry
 release-again:
-	git tag -d `pi version`
-	git push -d origin `pi version`
-	git tag `pi version`
-	git push origin `pi version`
+	git tag -d `pi version -s`
+	git push -d origin `pi version -s`
+	git tag `pi version -s`
+	git push origin `pi version -s`
