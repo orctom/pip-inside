@@ -1,6 +1,6 @@
 [project]
 name = "pip-inside"
-description = ""
+description = "Like poetry, but it's pip"
 authors = [
     { name = "orctom", email = "orctom@gmail.com" },
 ]
@@ -45,3 +45,4 @@ exclude = """
   | data
 )/
 """
+

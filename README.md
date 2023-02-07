@@ -1,19 +1,19 @@
 # pip-inside
 
-I use `pip`, so I have `requirements.txt`, and `requirements-dev.txt` as well.
+I use `pip`, so I have `requirements.txt`, and might `requirements-dev.txt` as well.
 
-I started to configure mine `black`, `isort`, `pypy`..., so I have `pyproject.toml` later.
+Later when I started to configure my `black`, `isort`, `pypy`..., I have `pyproject.toml`.
 
-I wanted to move `requrements.txt` into `pyproject.toml`, as it's feature-rich, then I saw [poetry](https://python-poetry.org/).
+Then I  wanted to move `requrements.txt` into `pyproject.toml`, as it's feature-rich, then I saw [poetry](https://python-poetry.org/).
 
-I missed a lot about `pip`, as `poetry`:
+After used poetry for months, I started to missing `pip`, as `poetry`:
  - sometimes slow, and sometimes quite slow
  - hash mismatch, then I have to delete my entire cache, and download everything again
- - when you have huge dependencies like `torch` (~2 GB), too bad to install a general version, then a working version in `toe` plugin
+ - when you have huge dependencies like `torch` (~2 GB), too bad to install a general version, then a working version later in `toe` plugin
 
-So this `pip-inside` comes out. It's just `flit` with `pip` as the dependency installer.
+So this `pip-inside` comes out. It's just `flit-core` with `pip` as the dependency installer.
 
-So it does NOT have these features (might add some of them later):
+It does NOT have following features (might add some of them later):
  - hash checking
  - version freezing
  - dependency tree
@@ -32,8 +32,8 @@ pip install pip-inside
  - pi
 
 ```shell
-pip-inside
-Usage: pip-inside [OPTIONS] COMMAND [ARGS]...
+pi
+Usage: pi [OPTIONS] COMMAND [ARGS]...
 
 Options:
   -V, --version  show version of this tool
