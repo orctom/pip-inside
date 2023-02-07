@@ -151,6 +151,7 @@ def build_toml(meta):
     license_inline = tomlkit.inline_table()
     license_inline.update({'file': 'LICENSE'})
     project_table.add('license', license_inline)
+    project_table.add('license-expression', meta.license)
     project_table.add('dynamic', tomlkit.array('["version"]'))
     project_table.add('requires-python', meta.requires_python)
     dependencies_list = tomlkit.array()
@@ -189,10 +190,9 @@ def write_license(meta):
     if os.path.exists('LICENSE') or meta.license == 'skip':
         return
     licenses_dir = pathlib.Path(__file__).parent / 'licenses'
-    year = date.today().year
     with (licenses_dir / f"{meta.license}.txt").open() as f_in, open('LICENSE', 'w') as f_out:
-        content = f_in.read().format(year=year, author=meta.author)
-        f_out.write(content)
+        year = date.today().year
+        f_out.write(f_in.read().format(year=year, author=meta.author))
         click.secho(f"Added 'LICENSE'", fg='cyan')
 
 

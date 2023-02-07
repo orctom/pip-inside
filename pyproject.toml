@@ -6,6 +6,12 @@ authors = [
 ]
 readme = "README.md"
 license = {file = "LICENSE"}
+license-expression = 'Apache-2.0'
+classifiers = [
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
 dynamic = ['version']
 requires-python = ">=3.8"
 dependencies = [
