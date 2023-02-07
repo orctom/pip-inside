@@ -5,7 +5,14 @@ import sys
 from datetime import datetime
 from typing import Union
 
+import click
 import requests
+from InquirerPy import inquirer
+from InquirerPy.base.control import Choice
+
+from pip_inside.utils import version_specifies
+
+from . import spinner
 
 try:
     from importlib.metadata import PackageNotFoundError, distribution
@@ -22,7 +29,43 @@ P_VERSION = re.compile(r".*<span class=\"package-snippet__version\">(.+)</span>"
 P_RELEASE = re.compile(r"<time\s+datetime=\"([^\"]+)\"")
 P_DESCRIPTION = re.compile(r".*<p class=\"package-snippet__description\">(.+)</p>")
 
-P_INDEX_VERSIONS = re.compile('(?<=Available versions:)([a-zA-Z0-9., ]+)(?=\\n)')
+P_INDEX_VERSIONS = re.compile('(?<=Available versions:)([a-zA-Z0-9., ]+)')
+
+
+def prompt_a_package(again: bool = False):
+    prompt = 'Add aother package (leave blank to exit):' if again else 'Add a package (leave blank to exit):'
+    name = inquirer.text(message=prompt).execute()
+    if not name:
+        return
+
+    with spinner.Spinner(f"Searching for {name}"):
+        pkgs = search(name)
+    name = inquirer.select(
+        message="Select the package:",
+        choices=[Choice(value=pkg.name, name=pkg.desc) for pkg in pkgs],
+        vi_mode=True,
+        wrap_lines=True,
+        mandatory=True,
+    ).execute()
+
+    with spinner.Spinner(f"Fetching version list for {name}"):
+        versions = fetch_versions(name)
+    if versions:
+        version = inquirer.fuzzy(
+            message="Select the version:",
+            choices=['[set manually]'] + versions[:15],
+            vi_mode=True,
+            wrap_lines=True,
+            mandatory=True,
+        ).execute()
+        if version == '[set manually]':
+            version = inquirer.text(message="Version:", completer={v: None for v in versions[:15]}).execute().strip()
+    else:
+        click.secho('Failed to fetch version list, please set version menually', fg='cyan')
+        version = inquirer.text(message="Version:").execute().strip()
+    if version:
+        name = f"{name}{version}" if version_specifies.has_ver_spec(version) else f"{name}=={version}"
+    return name
 
 
 def check_version(package_name: str) -> Union[str, bool]:
@@ -60,7 +103,11 @@ def search(name: str):
     ]
 
 
-def versions(name: str):
+def fetch_versions(name: str):
+    return versions_by_pip_index(name) or versions_by_json(name)
+
+
+def versions_by_pip_index(name: str):
     try:
         cmd = [sys.executable, '-m', 'pip', 'index', 'versions', name]
         process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -70,4 +117,17 @@ def versions(name: str):
             return None
         return [v.strip() for v in m.group().strip().split(',')]
     except subprocess.CalledProcessError:
-        pass
+        return None
+
+
+def versions_by_json(name: str):
+    try:
+        url = f"https://pypi.org//pypi/{name}/json"
+        data = requests.get(url).json()
+        if data is None or len(data) < 10:
+            return None
+        versions = list(data.get('releases').keys())
+        versions.reverse()
+        return versions
+    except Exception:
+        return None

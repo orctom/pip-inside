@@ -2,7 +2,6 @@ from typing import List
 
 import click
 from InquirerPy import inquirer
-from InquirerPy.base.control import Choice
 
 from . import Aborted, __version__
 from .commands.add import handle_add
@@ -12,7 +11,7 @@ from .commands.install import handle_install
 from .commands.publish import handle_publish
 from .commands.remove import handle_remove
 from .commands.version import handle_version
-from .utils import packages, spinner, version_specifies
+from .utils import packages, version_specifies
 
 
 @click.group(invoke_without_command=True)
@@ -61,41 +60,10 @@ def add(name, group, interactive: bool, v: bool):
             handle_add(name, group)
             return
 
-        prompt = "Add a package (leave blank to exit):"
-        while True:
-            name = inquirer.text(message=prompt).execute()
-            if not name:
-                return
-
-            with spinner.Spinner(f"Searching for {name}"):
-                pkgs = packages.search(name)
-            name = inquirer.select(
-                message="Select the package:",
-                choices=[Choice(value=pkg.name, name=pkg.desc) for pkg in pkgs],
-                vi_mode=True,
-                wrap_lines=True,
-                mandatory=True,
-            ).execute()
-
-            with spinner.Spinner(f"Fetching version list for {name}"):
-                versions = packages.versions(name)
-            if versions:
-                version = inquirer.fuzzy(
-                    message="Select the version:",
-                    choices=['[set manually]'] + versions[:15],
-                    vi_mode=True,
-                    wrap_lines=True,
-                    mandatory=True,
-                ).execute()
-                if version == '[set manually]':
-                    version = inquirer.text(message="Version:", completer={v: None for v in versions[:15]}).execute().strip()
-            else:
-                click.secho('Failed to fetch version list, please set version menually', fg='cyan')
-                version = inquirer.text(message="Version:").execute().strip()
-            if version:
-                name = f"{name}{version}" if version_specifies.has_ver_spec(version) else f"{name}=={version}"
+        name = packages.prompt_a_package()
+        while name is not None:
             handle_add(name, group)
-            prompt = "Add another package (leave blank to exit):"
+            name = packages.prompt_a_package(True)
     except Aborted as e:
         click.secho(e, fg='yellow')
     except Exception as e:

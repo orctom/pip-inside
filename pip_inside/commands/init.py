@@ -1,7 +1,6 @@
 import os
 import pathlib
 import subprocess
-import sys
 from datetime import date
 from types import SimpleNamespace
 
@@ -11,7 +10,7 @@ from InquirerPy import inquirer
 from InquirerPy.base.control import Choice
 
 from pip_inside import Aborted
-from pip_inside.utils import packages, spinner, version_specifies
+from pip_inside.utils import packages
 from pip_inside.utils.licenses import LICENSES
 
 
@@ -77,41 +76,10 @@ def collect_metadata():
 
 def collect_dependencies():
     dependencies = []
-    prompt = "Add a package (leave blank to continue):"
-    while True:
-        name = inquirer.text(message=prompt).execute()
-        if not name:
-            break
-
-        with spinner.Spinner(f"Searching for {name}"):
-            pkgs = packages.search(name)
-        name = inquirer.select(
-            message="Select the package:",
-            choices=[Choice(value=pkg.name, name=pkg.desc) for pkg in pkgs],
-            vi_mode=True,
-            wrap_lines=True,
-            mandatory=True,
-        ).execute()
-
-        with spinner.Spinner(f"Fetching version list for {name}"):
-            versions = packages.versions(name)
-        if versions:
-            version = inquirer.fuzzy(
-                message="Select the version:",
-                choices=['[set manually]'] + versions[:15],
-                vi_mode=True,
-                wrap_lines=True,
-                mandatory=True,
-            ).execute()
-            if version == '[set manually]':
-                version = inquirer.text(message="Version:", completer={v: None for v in versions[:15]}).execute().strip()
-        else:
-            click.secho('Failed to fetch version list, please set version menually', fg='cyan')
-            version = inquirer.text(message="Version:").execute().strip()
-        if version:
-            name = f"{name}{version}" if version_specifies.has_ver_spec(version) else f"{name}=={version}"
+    name = packages.prompt_a_package()
+    while name is not None:
         dependencies.append(name)
-        prompt = "Add another package (leave blank to continue):"
+        name = packages.prompt_a_package(True)
     return dependencies
 
 

@@ -19,6 +19,14 @@ It does NOT have following features (might add some of them later):
  - dependency tree
 
 
+NOTICES:
+
+Only supports:
+ - dynamic `version` (`__version__ = 'your version'` in {root_module}/__init__.py)
+ - non-dynamic `description` (in `pyproject.toml`)
+ - no `src` folder in project root
+
+
 ## install
 
 ```shell
