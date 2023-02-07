@@ -3,6 +3,7 @@ import os
 from types import SimpleNamespace
 from typing import List, Union
 
+import pkg_resources
 import tomlkit
 
 from pip_inside.utils.version_specifies import get_package_name
@@ -120,6 +121,16 @@ class PyProject:
             return self.get('project.dependencies')
         else:
             return self.get(f"project.optional-dependencies.{group}")
+
+    def get_dependencies_with_group(self):
+        dependencies = {}
+        for dep in self.get('project.dependencies', default=[]):
+            dependencies[pkg_resources.Requirement(dep)] = 'main'
+
+        for group, deps in self.get('project.optional-dependencies', default={}):
+            for dep in deps:
+                dependencies[pkg_resources.Requirement(dep)] = group
+        return dependencies
 
     @staticmethod
     def get_template():

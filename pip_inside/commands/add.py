@@ -10,6 +10,10 @@ from pip_inside.utils.pyproject import PyProject
 def handle_add(name: str, group: Optional[str]):
     try:
         pyproject = PyProject.from_toml()
+        name = name.lower().replace('_', '-')
+        if pyproject.find_dependency(name, 'main'):
+            click.secho("Skip, already installed as main dependency")
+            return
         name_installed = pyproject.find_dependency(name, group)
         if name_installed:
             if name_installed == name:

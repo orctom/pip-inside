@@ -15,4 +15,8 @@ def has_ver_spec(name: str):
 
 
 def get_package_name(name: str):
-    return P_NORMALIZE.search(name).group()
+    return P_NORMALIZE.search(norm_name(name)).group()
+
+
+def norm_name(name: str):
+    return name.lower().replace('_', '-') if name else None
