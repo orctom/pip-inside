@@ -3,6 +3,7 @@ import sys
 
 import click
 
+from pip_inside.utils.dependencies import Package
 from pip_inside.utils.pyproject import PyProject
 
 
@@ -11,7 +12,11 @@ def handle_remove(name, group):
         pyproject = PyProject.from_toml()
         if pyproject.remove_dependency(name, group):
             pyproject.flush()
-            cmd = [sys.executable, '-m', 'pip', 'uninstall', name, '-y']
+            deps = Package.get_unused_sub_dependencies(name)
+            if deps:
+                cmd = [sys.executable, '-m', 'pip', 'uninstall', name, *deps, '-y']
+            else:
+                cmd = [sys.executable, '-m', 'pip', 'uninstall', name, '-y']
             subprocess.run(cmd, stderr=sys.stderr, stdout=sys.stdout)
         else:
             click.secho(f"Package: [{name}] not found in group: [{group}]", fg='yellow')
