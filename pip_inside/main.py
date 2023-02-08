@@ -8,6 +8,7 @@ from .commands.add import handle_add
 from .commands.build import handle_build
 from .commands.init import handle_init
 from .commands.install import handle_install
+from .commands.list import handle_list
 from .commands.publish import handle_publish
 from .commands.remove import handle_remove
 from .commands.version import handle_version
@@ -144,6 +145,18 @@ def publish(repository: str, dist: str, interactive: bool, v: bool):
         if v:
             import traceback
             click.secho(traceback.format_exc(), fg='red')
+
+
+@cli.command()
+@click.option('--unused', is_flag=True, default=False, help="only show unused dependencies")
+def list(unused: bool):
+    """Show dependency tree"""
+    try:
+        handle_list(unused)
+    except Aborted as e:
+        click.secho(e, fg='yellow')
+    except Exception as e:
+        click.secho(e, fg='red')
 
 
 @cli.command()
