@@ -8,9 +8,9 @@ from .commands.add import handle_add
 from .commands.build import handle_build
 from .commands.init import handle_init
 from .commands.install import handle_install
-from .commands.list import handle_list
 from .commands.publish import handle_publish
 from .commands.remove import handle_remove
+from .commands.show import handle_show
 from .commands.version import handle_version
 from .utils import packages, version_specifies
 
@@ -149,10 +149,10 @@ def publish(repository: str, dist: str, interactive: bool, v: bool):
 
 @cli.command()
 @click.option('--unused', is_flag=True, default=False, help="only show unused dependencies")
-def list(unused: bool):
+def show(unused: bool):
     """Show dependency tree"""
     try:
-        handle_list(unused)
+        handle_show(unused)
     except Aborted as e:
         click.secho(e, fg='yellow')
     except Exception as e:
