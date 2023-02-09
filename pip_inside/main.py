@@ -10,6 +10,7 @@ from .commands.init import handle_init
 from .commands.install import handle_install
 from .commands.publish import handle_publish
 from .commands.remove import handle_remove
+from .commands.shell import handle_shell
 from .commands.show import handle_show
 from .commands.version import handle_version
 from .utils import packages, version_specifies
@@ -148,8 +149,24 @@ def publish(repository: str, dist: str, interactive: bool, v: bool):
 
 
 @cli.command()
+@click.option('-v', 'v', is_flag=True, default=False, help="verbovse")
+def shell(v: bool):
+    """Ensure '.venv' virtualenv, new shell then activate it"""
+    try:
+        handle_shell()
+    except Aborted as e:
+        click.secho(e, fg='yellow')
+    except Exception as e:
+        click.secho(e, fg='red')
+        if v:
+            import traceback
+            click.secho(traceback.format_exc(), fg='red')
+
+
+@cli.command()
 @click.option('--unused', is_flag=True, default=False, help="only show unused dependencies")
-def show(unused: bool):
+@click.option('-v', 'v', is_flag=True, default=False, help="verbovse")
+def show(unused: bool, v: bool):
     """Show dependency tree"""
     try:
         handle_show(unused)
@@ -157,6 +174,9 @@ def show(unused: bool):
         click.secho(e, fg='yellow')
     except Exception as e:
         click.secho(e, fg='red')
+        if v:
+            import traceback
+            click.secho(traceback.format_exc(), fg='red')
 
 
 @cli.command()
