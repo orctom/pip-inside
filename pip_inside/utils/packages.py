@@ -1,5 +1,6 @@
 import collections
 import re
+import shutil
 import subprocess
 import sys
 from datetime import datetime
@@ -109,7 +110,7 @@ def fetch_versions(name: str):
 
 def versions_by_pip_index(name: str):
     try:
-        cmd = [sys.executable, '-m', 'pip', 'index', 'versions', name]
+        cmd = [shutil.which('python'), '-m', 'pip', 'index', 'versions', name]
         process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         out, _ = process.communicate()
         m = P_INDEX_VERSIONS.search(out.decode())

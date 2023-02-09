@@ -1,3 +1,4 @@
+import shutil
 import subprocess
 import sys
 from typing import List
@@ -20,7 +21,7 @@ def handle_install(groups: List[str]):
         if len(dependencies) == 0:
             click.secho('Nothing to install, no dependencies specified in pyproject.toml')
             return
-        cmd = [sys.executable, '-m', 'pip', 'install', *dependencies]
+        cmd = [shutil.which('python'), '-m', 'pip', 'install', *dependencies]
         subprocess.run(cmd, stderr=sys.stderr, stdout=sys.stdout)
     except subprocess.CalledProcessError:
         pass

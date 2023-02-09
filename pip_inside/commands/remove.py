@@ -1,3 +1,4 @@
+import shutil
 import subprocess
 import sys
 
@@ -14,13 +15,11 @@ def handle_remove(name, group):
             pyproject.flush()
             deps = Package.get_unused_sub_dependencies(name)
             if deps:
-                cmd = [sys.executable, '-m', 'pip', 'uninstall', name, *deps, '-y']
+                cmd = [shutil.which('python'), '-m', 'pip', 'uninstall', name, *deps, '-y']
             else:
-                cmd = [sys.executable, '-m', 'pip', 'uninstall', name, '-y']
+                cmd = [shutil.which('python'), '-m', 'pip', 'uninstall', name, '-y']
             subprocess.run(cmd, stderr=sys.stderr, stdout=sys.stdout)
         else:
             click.secho(f"Package: [{name}] not found in group: [{group}]", fg='yellow')
     except subprocess.CalledProcessError:
         pass
-
-

@@ -118,16 +118,16 @@ class PyProject:
             return deps_main + deps_optionals
 
         if group == 'main':
-            return self.get('project.dependencies')
+            return self.get('project.dependencies', default=[])
         else:
-            return self.get(f"project.optional-dependencies.{group}")
+            return self.get(f"project.optional-dependencies.{group}", default=[])
 
     def get_dependencies_with_group(self):
         dependencies = {}
         for dep in self.get('project.dependencies', default=[]):
             dependencies[pkg_resources.Requirement(dep)] = 'main'
 
-        for group, deps in self.get('project.optional-dependencies', default={}):
+        for group, deps in self.get('project.optional-dependencies', default={}).items():
             for dep in deps:
                 dependencies[pkg_resources.Requirement(dep)] = group
         return dependencies

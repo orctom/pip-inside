@@ -44,7 +44,7 @@ def init(v: bool):
 
 @cli.command()
 @click.argument('name', required=False, type=str)
-@click.option('--group', default='main', help='dependency group')
+@click.option('-G', '--group', default='main', help='dependency group')
 @click.option('-i', 'interactive', is_flag=True, default=False, help="interactive mode")
 @click.option('-v', 'v', is_flag=True, default=False, help="verbovse")
 def add(name, group, interactive: bool, v: bool):

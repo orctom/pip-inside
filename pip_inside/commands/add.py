@@ -1,3 +1,4 @@
+import shutil
 import subprocess
 import sys
 from typing import Optional
@@ -20,9 +21,9 @@ def handle_add(name: str, group: Optional[str]):
                 click.secho("Skip, already installed")
             else:
                 pyproject.remove_dependency(name_installed, group)
-        cmd = [sys.executable, '-m', 'pip', 'install', name]
-        subprocess.run(cmd, stderr=sys.stderr, stdout=sys.stdout)
-        pyproject.add_dependency(name, group)
-        pyproject.flush()
+        cmd = [shutil.which('python'), '-m', 'pip', 'install', name]
+        if subprocess.run(cmd, stderr=sys.stderr, stdout=sys.stdout).returncode == 0:
+            pyproject.add_dependency(name, group)
+            pyproject.flush()
     except subprocess.CalledProcessError:
         pass

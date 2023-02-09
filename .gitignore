@@ -31,6 +31,8 @@ data/
 models/
 *.pyc
 .idea/
+.venv/
+.pip-inside/
 
 dummy*
 *.log
