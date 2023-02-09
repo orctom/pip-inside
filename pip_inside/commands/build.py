@@ -88,6 +88,7 @@ def handle_build(dist: str = 'dist'):
 
 
 def build_package(path_dist: str):
+    os.makedirs('dist', exist_ok=True)
     pyproject = PyProject.from_toml()
     path_toml, path_dist = Path('pyproject.toml'), Path(path_dist)
     extra_meta = {
