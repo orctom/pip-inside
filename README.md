@@ -13,18 +13,15 @@ After used poetry for months, I started to missing `pip`, as `poetry`:
 
 So this `pip-inside` comes out. It's just `flit-core` with `pip` as the dependency installer.
 
-It does NOT have following features (might add some of them later):
- - hash checking
- - version freezing
- - dependency tree
 
-
-NOTICES:
+**NOTICES**:
 
 Only supports:
  - dynamic `version` (`__version__ = 'your version'` in {root_module}/__init__.py)
  - non-dynamic `description` (in `pyproject.toml`)
  - no `src` folder in project root
+ - virtualenv folder named `.venv` in project root
+ - not checking hashes
 
 
 ## install

@@ -6,6 +6,7 @@ from InquirerPy import inquirer
 from . import Aborted, __version__
 from .commands.add import handle_add
 from .commands.build import handle_build
+from .commands.freeze import handle_freeze
 from .commands.init import handle_init
 from .commands.install import handle_install
 from .commands.publish import handle_publish
@@ -151,7 +152,7 @@ def publish(repository: str, dist: str, interactive: bool, v: bool):
 @cli.command()
 @click.option('-v', 'v', is_flag=True, default=False, help="verbovse")
 def shell(v: bool):
-    """Ensure '.venv' virtualenv, new shell then activate it"""
+    """Ensure '.venv' virtualenv, and new shell into it"""
     try:
         handle_shell()
     except Aborted as e:
@@ -170,6 +171,21 @@ def show(unused: bool, v: bool):
     """Show dependency tree"""
     try:
         handle_show(unused)
+    except Aborted as e:
+        click.secho(e, fg='yellow')
+    except Exception as e:
+        click.secho(e, fg='red')
+        if v:
+            import traceback
+            click.secho(traceback.format_exc(), fg='red')
+
+
+@cli.command()
+@click.option('-v', 'v', is_flag=True, default=False, help="verbovse")
+def freeze(v: bool):
+    """Freeze dependencies into 'pi.lock'"""
+    try:
+        handle_freeze()
     except Aborted as e:
         click.secho(e, fg='yellow')
     except Exception as e:
