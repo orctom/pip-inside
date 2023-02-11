@@ -15,7 +15,7 @@ def handle_freeze():
             dependencies[group or child.group].append(dep)
     with open('pi.lock', 'w') as f:
         tomlkit.dump(dependencies, f)
-    click.secho(f"Generated pi.lock", fg='cyan')
+    click.secho(f"Generated pi.lock", fg='bright_cyan')
 
 
 def _find_installed_child(pkg: Package):

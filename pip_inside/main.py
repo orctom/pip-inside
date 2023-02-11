@@ -1,3 +1,4 @@
+import shutil
 from typing import List
 
 import click
@@ -21,6 +22,7 @@ from .utils import packages, version_specifies
 @click.option('-V', '--version', is_flag=True, default=False, help="show version of this tool")
 @click.pass_context
 def cli(ctx, version: bool):
+    click.secho(f"[python] {shutil.which('python')}", fg='cyan')
     if ctx.invoked_subcommand:
         return
     if version:

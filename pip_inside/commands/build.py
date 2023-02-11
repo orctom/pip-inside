@@ -78,7 +78,7 @@ class PiSdistBuilder(SdistBuilder):
 
 
 def handle_build(dist: str = 'dist'):
-    click.secho(f"Building wheel and sdist to: {dist}", fg='cyan')
+    click.secho(f"Building wheel and sdist to: {dist}", fg='bright_cyan')
     pkg = build_package(dist)
 
     wheel_name, sdist_name = str(pkg.wheel.file), str(pkg.sdist.file)

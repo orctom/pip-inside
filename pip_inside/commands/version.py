@@ -12,4 +12,4 @@ def handle_version(short: bool = False):
     m = module_from_spec(s)
     s.loader.exec_module(m)
     version = m.__version__ if short else f"{module}: {m.__version__}"
-    click.secho(version, fg='cyan')
+    click.secho(version, fg='bright_cyan')

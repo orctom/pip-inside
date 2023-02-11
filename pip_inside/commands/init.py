@@ -143,7 +143,7 @@ def build_toml(meta):
 def write_toml(toml):
     with open('pyproject.toml', 'w') as f:
         tomlkit.dump(toml, f)
-        click.secho(f"Added 'pyproject.toml'", fg='cyan')
+        click.secho(f"Added 'pyproject.toml'", fg='bright_cyan')
 
 
 def write_readme(meta):
@@ -151,7 +151,7 @@ def write_readme(meta):
         return
     with open('README.md', 'w') as f:
         f.write(f"# {meta.name}\n\n {meta.description}\n")
-        click.secho(f"Added 'README.md'", fg='cyan')
+        click.secho(f"Added 'README.md'", fg='bright_cyan')
 
 
 def write_license(meta):
@@ -161,7 +161,7 @@ def write_license(meta):
     with (licenses_dir / f"{meta.license}.txt").open() as f_in, open('LICENSE', 'w') as f_out:
         year = date.today().year
         f_out.write(f_in.read().format(year=year, author=meta.author))
-        click.secho(f"Added 'LICENSE'", fg='cyan')
+        click.secho(f"Added 'LICENSE'", fg='bright_cyan')
 
 
 def write_root_module_with_version(meta):
@@ -169,4 +169,4 @@ def write_root_module_with_version(meta):
     os.makedirs(module_name, exist_ok=True)
     with open(f"{module_name}/__init__.py", 'w') as f:
         f.write(f"__version__ = '{meta.version}'")
-        click.secho(f"Added '{module_name}/__init__.py'", fg='cyan')
+        click.secho(f"Added '{module_name}/__init__.py'", fg='bright_cyan')

@@ -7,7 +7,7 @@ class Spinner(threading.Thread):
 
     def __init__(self, msg: str, interval=0.25):
         super().__init__()
-        click.secho(f"{msg} ", nl=False, fg='cyan')
+        click.secho(f"{msg} ", nl=False, fg='bright_cyan')
         self.status = threading.Event()
         self.interval = interval
         self.daemon = True
@@ -20,7 +20,7 @@ class Spinner(threading.Thread):
 
     def run(self):
         while not self.is_stopped():
-            click.secho('.', nl=False, fg='cyan')
+            click.secho('.', nl=False, fg='bright_cyan')
             self.status.wait(self.interval)
 
     def __enter__(self):
@@ -29,4 +29,4 @@ class Spinner(threading.Thread):
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.stop()
-        click.secho('\b', fg='cyan')
+        click.secho('\b', fg='bright_cyan')

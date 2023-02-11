@@ -33,7 +33,8 @@ def _spaw_new_shell():
     shell = os.environ.get("SHELL")
     terminal = shutil.get_terminal_size()
     p = pexpect.spawn(shell, ['-i'], dimensions=(terminal.lines, terminal.columns))
-    p.setecho(False)
+    if shell.endswith('/zsh'):
+        p.setecho(False)
     p.sendline('source .venv/bin/activate')
     signal.signal(signal.SIGWINCH, resize)
     p.interact(escape_character=None)

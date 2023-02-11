@@ -91,7 +91,7 @@ def upload_to_repository(pkg, credential):
             resp = requests.post(credential.url, data=data, files=files, auth=(credential.username, credential.password))
             resp.raise_for_status()
     try:
-        click.secho(f"Publishing to [{credential.name}] ({credential.url})", fg='cyan')
+        click.secho(f"Publishing to [{credential.name}] ({credential.url})", fg='bright_cyan')
         upload(pkg.wheel.builder.metadata, pkg.wheel.file, pkg.wheel_md5, pkg.wheel_sha256)
         upload(pkg.sdist.builder.metadata, pkg.sdist.file, pkg.sdist_md5, pkg.sdist_sha256)
         check_published_url(credential.url, pkg.wheel.builder.metadata)
@@ -151,5 +151,5 @@ def check_published_url(url, meta: Metadata):
     pypi_web = API_TO_WEB.get(url)
     if pypi_web:
         published_url = f"{pypi_web}project/{meta.name}/{meta.version}"
-        click.secho(f"View at: {published_url}", fg='cyan')
+        click.secho(f"View at: {published_url}", fg='bright_cyan')
     click.secho('Done', fg='green')

@@ -11,12 +11,15 @@ DEPENDENCIES_COMMON = [
     'pip', 'packaging', 'certifi', 'setuptools', 'ipython', 'tqdm',
     'requests', 'urllib3', 'wheel', 'tomlkit', 'pip-inside',
 ]
+COLOR_MAIN = 'blue'
+COLOR_OPTIONAL = 'magenta'
+COLOR_SUBS = 'white'
 
 
 def get_name_fg_by_group(group):
     if group is None:
-        return 'white'
-    return 'green' if group == 'main' else 'cyan'
+        return COLOR_SUBS
+    return COLOR_MAIN if group == 'main' else COLOR_OPTIONAL
 
 
 class TreeEntry:
@@ -141,7 +144,10 @@ class Package:
             click.secho('Cyclic dependencies:', fg='yellow')
             for path in self.CYCLIC_DENDENCIES:
                 click.secho(f"\t{path}", fg='yellow')
-        click.secho('Dependencies:')
+        key_main = click.style(COLOR_MAIN, fg=COLOR_MAIN)
+        key_optional = click.style(COLOR_OPTIONAL, fg=COLOR_OPTIONAL)
+        key_subs = click.style(COLOR_SUBS, fg=COLOR_SUBS)
+        click.secho(f"Dependencies: (main: {key_main}, optional: {key_optional}, sub-dependencies: {key_subs})")
         for child in self.children:
             child.echo()
             for entry in child.tree_list(prefix='   '):
