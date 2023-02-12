@@ -5,6 +5,7 @@ import sys
 import venv
 from pathlib import Path
 
+import click
 import pexpect
 
 from pip_inside import Aborted

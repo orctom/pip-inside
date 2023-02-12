@@ -5,16 +5,6 @@ import click
 from InquirerPy import inquirer
 
 from . import Aborted, __version__
-from .commands.add import handle_add
-from .commands.build import handle_build
-from .commands.freeze import handle_freeze
-from .commands.init import handle_init
-from .commands.install import handle_install
-from .commands.publish import handle_publish
-from .commands.remove import handle_remove
-from .commands.shell import handle_shell
-from .commands.show import handle_show
-from .commands.version import handle_version
 from .utils import packages, version_specifies
 
 
@@ -36,6 +26,7 @@ def cli(ctx, version: bool):
 def init(v: bool):
     """Init project in current directory"""
     try:
+        from .commands.init import handle_init
         handle_init()
     except Aborted as e:
         click.secho(e, fg='yellow')
@@ -54,6 +45,7 @@ def init(v: bool):
 def add(name, group, interactive: bool, v: bool):
     """Add a package as project dependency"""
     try:
+        from .commands.add import handle_add
         if name:
             if interactive and version_specifies.ver_has_spec(name) :
                 interactive = False
@@ -85,6 +77,7 @@ def add(name, group, interactive: bool, v: bool):
 def remove(name, group, v: bool):
     """Remove a package from project dependencies"""
     try:
+        from .commands.remove import handle_remove
         if name is None:
             name = inquirer.text(message="package name:").execute()
         handle_remove(name, group)
@@ -103,6 +96,7 @@ def remove(name, group, v: bool):
 def install(groups: List[str], v: bool):
     """Install project dependencies by groups"""
     try:
+        from .commands.install import handle_install
         if len(groups) == 1:
             groups = groups[0].split(',')
         elif len(groups) == 0:
@@ -123,6 +117,7 @@ def install(groups: List[str], v: bool):
 def build(dist: str, v: bool):
     """Build the wheel and sdist"""
     try:
+        from .commands.build import handle_build
         handle_build(dist)
     except Aborted as e:
         click.secho(e, fg='yellow')
@@ -141,6 +136,7 @@ def build(dist: str, v: bool):
 def publish(repository: str, dist: str, interactive: bool, v: bool):
     """Publish the wheel and sdist to remote repository"""
     try:
+        from .commands.publish import handle_publish
         handle_publish(repository, dist=dist, interactive=interactive)
     except Aborted as e:
         click.secho(e, fg='yellow')
@@ -156,6 +152,7 @@ def publish(repository: str, dist: str, interactive: bool, v: bool):
 def shell(v: bool):
     """Ensure '.venv' virtualenv, and new shell into it"""
     try:
+        from .commands.shell import handle_shell
         handle_shell()
     except Aborted as e:
         click.secho(e, fg='yellow')
@@ -172,6 +169,7 @@ def shell(v: bool):
 def show(unused: bool, v: bool):
     """Show dependency tree"""
     try:
+        from .commands.show import handle_show
         handle_show(unused)
     except Aborted as e:
         click.secho(e, fg='yellow')
@@ -187,6 +185,7 @@ def show(unused: bool, v: bool):
 def freeze(v: bool):
     """Freeze dependencies into 'pi.lock'"""
     try:
+        from .commands.freeze import handle_freeze
         handle_freeze()
     except Aborted as e:
         click.secho(e, fg='yellow')
@@ -202,6 +201,7 @@ def freeze(v: bool):
 def version(short: bool):
     """Show version of current project"""
     try:
+        from .commands.version import handle_version
         handle_version(short)
     except Aborted as e:
         click.secho(e, fg='yellow')
