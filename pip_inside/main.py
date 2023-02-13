@@ -11,7 +11,6 @@ from . import Aborted, __version__
 @click.option('-V', '--version', is_flag=True, default=False, help="show version of this tool")
 @click.pass_context
 def cli(ctx, version: bool):
-    click.secho(f"[python] {shutil.which('python')}", fg='cyan')
     if ctx.invoked_subcommand:
         return
     if version:
@@ -47,6 +46,7 @@ def add(name, group, interactive: bool, v: bool):
         from .commands.add import handle_add
         from .utils.misc import ver_has_spec
         from .utils.packages import prompt_a_package
+        click.secho(f"[python] {shutil.which('python')}", fg='cyan')
         if name:
             if interactive and ver_has_spec(name) :
                 interactive = False
@@ -79,6 +79,7 @@ def remove(name, group, v: bool):
     """Remove a package from project dependencies"""
     try:
         from .commands.remove import handle_remove
+        click.secho(f"[python] {shutil.which('python')}", fg='cyan')
         if name is None:
             name = inquirer.text(message="package name:").execute()
         handle_remove(name, group)
@@ -98,6 +99,7 @@ def install(groups: List[str], v: bool):
     """Install project dependencies by groups"""
     try:
         from .commands.install import handle_install
+        click.secho(f"[python] {shutil.which('python')}", fg='cyan')
         if len(groups) == 1:
             groups = groups[0].split(',')
         elif len(groups) == 0:
@@ -171,6 +173,7 @@ def show(unused: bool, v: bool):
     """Show dependency tree"""
     try:
         from .commands.show import handle_show
+        click.secho(f"[python] {shutil.which('python')}", fg='cyan')
         handle_show(unused)
     except Aborted as e:
         click.secho(e, fg='yellow')
@@ -187,6 +190,7 @@ def freeze(v: bool):
     """Freeze dependencies into 'pi.lock'"""
     try:
         from .commands.freeze import handle_freeze
+        click.secho(f"[python] {shutil.which('python')}", fg='cyan')
         handle_freeze()
     except Aborted as e:
         click.secho(e, fg='yellow')
