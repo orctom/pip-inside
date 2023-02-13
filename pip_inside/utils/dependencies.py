@@ -12,7 +12,7 @@ from .pyproject import PyProject
 
 ROOT = 'root'
 DEPENDENCIES_COMMON = [
-    'pip', 'packaging', 'certifi', 'setuptools', 'ipython', 'tqdm',
+    'pip', 'certifi', 'setuptools', 'ipython', 'poetry',
     'requests', 'urllib3', 'wheel', 'tomlkit', 'pip-inside',
 ]
 COLOR_MAIN = 'blue'
@@ -133,7 +133,7 @@ class Dependencies:
         self._root_non_dep.children.clear()
         project_name = self._pyproject.get('project.name')
         dependencies_project = self._get_all_project_dependencies()
-        exclusion = set([project_name] + DEPENDENCIES_COMMON + dependencies_project)
+        exclusion = set([project_name] + dependencies_project)
         parents = collections.defaultdict(set)
         for dist in self._distributions.get_all():
             name = norm_name(dist.key)
@@ -204,3 +204,9 @@ class Dependencies:
             child.echo()
             for entry in child.tree_list():
                 entry.echo()
+
+    def get_unused_dependencies_for(self, name: str) -> List[str]:
+        name = norm_name(name)
+        other_in_use = set(self._get_all_project_dependencies(exclusions=[name]))
+        children = {norm_name(r.name) for r in self._distributions.get(name).requires()}
+        return list(children - other_in_use)
