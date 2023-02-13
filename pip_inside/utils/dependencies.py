@@ -7,6 +7,7 @@ from typing import Dict, List, Optional, Set
 import click
 import pkg_resources
 
+from .misc import norm_name
 from .pyproject import PyProject
 
 ROOT = 'root'
@@ -18,9 +19,6 @@ COLOR_MAIN = 'blue'
 COLOR_OPTIONAL = 'magenta'
 COLOR_SUBS = 'white'
 
-
-def norm_name(name: str):
-    return name.lower().replace('_', '-') if name else None
 
 
 def get_name_fg_by_group(group):

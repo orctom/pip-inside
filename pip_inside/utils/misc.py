@@ -20,3 +20,7 @@ def get_package_name(name: str):
 
 def norm_name(name: str):
     return name.lower().replace('_', '-') if name else None
+
+
+def norm_module(name: str):
+    return name.lower().replace('-', '_') if name else None

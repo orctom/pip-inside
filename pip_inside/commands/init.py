@@ -10,7 +10,7 @@ from InquirerPy import inquirer
 from InquirerPy.base.control import Choice
 
 from pip_inside import Aborted
-from pip_inside.utils import packages
+from pip_inside.utils import misc, packages
 from pip_inside.utils.licenses import LICENSES
 
 
@@ -165,7 +165,7 @@ def write_license(meta):
 
 
 def write_root_module_with_version(meta):
-    module_name = meta.name.lower().replace('-', '_')
+    module_name = misc.norm_module(meta.name)
     os.makedirs(module_name, exist_ok=True)
     with open(f"{module_name}/__init__.py", 'w') as f:
         f.write(f"__version__ = '{meta.version}'")

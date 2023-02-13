@@ -1,12 +1,14 @@
 import itertools
 import os
 from types import SimpleNamespace
-from typing import List, Union
+from typing import Any, List, Optional, Union
 
 import tomlkit
 from packaging.requirements import Requirement
 
-from .version_specifies import get_package_name
+from pip_inside import Aborted
+
+from .misc import get_package_name, norm_module
 
 
 class PyProject:
@@ -26,10 +28,34 @@ class PyProject:
 
         with open(self.path, 'r') as f:
             self._meta = tomlkit.load(f)
+        self.validate()
 
     def flush(self):
         with open(self.path, "w") as f:
             tomlkit.dump(self._meta, f)
+
+    def validate(self):
+        def check_exists(attr: str, msg: Optional[str] = None):
+            if self.get(attr) is None:
+                msg = f", {msg}" if msg else ''
+                raise Aborted(f"Unsupported pyproject.toml, expecting: '{attr}' {msg}")
+        def check_not_exists(attr: str, msg: Optional[str] = None):
+            if self.get(attr) is not None:
+                msg = f", {msg}" if msg else ''
+                raise Aborted(f"Unsupported pyproject.toml, unexpected: '{attr}' {msg}")
+        def check_equals(attr: str, val: Any, msg: Optional[str] = None):
+            if self.get(attr) != val:
+                msg = f", {msg}" if msg else ''
+                raise Aborted(f"Unsupported pyproject.toml, expecting `{attr} = {val}` {msg}")
+
+        if len(self._meta) == 0:
+            return
+        check_exists('project.name')
+        check_not_exists('project.version', f"should be defined in {norm_module(self.get('project.name'))}/__init__.py")
+        check_equals('project.dynamic', ['version'])
+        check_exists('project.requires-python')
+        check_exists('build-system')
+        check_equals('build-system.build-backend', 'flit_core.buildapi', 'only supports `flit_core` backend')
 
     def update(self, key: str, value: Union[str, int, float, dict, list]):
         data = self._meta

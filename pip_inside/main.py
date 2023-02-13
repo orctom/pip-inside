@@ -5,7 +5,6 @@ import click
 from InquirerPy import inquirer
 
 from . import Aborted, __version__
-from .utils import packages, version_specifies
 
 
 @click.group(invoke_without_command=True)
@@ -46,8 +45,10 @@ def add(name, group, interactive: bool, v: bool):
     """Add a package as project dependency"""
     try:
         from .commands.add import handle_add
+        from .utils.misc import ver_has_spec
+        from .utils.packages import prompt_a_package
         if name:
-            if interactive and version_specifies.ver_has_spec(name) :
+            if interactive and ver_has_spec(name) :
                 interactive = False
                 click.secho('Off interactive mode, found version specifier in package name', fg='yellow')
         else:
@@ -57,10 +58,10 @@ def add(name, group, interactive: bool, v: bool):
             handle_add(name, group)
             return
 
-        name = packages.prompt_a_package()
+        name = prompt_a_package()
         while name is not None:
             handle_add(name, group)
-            name = packages.prompt_a_package(True)
+            name = prompt_a_package(True)
     except Aborted as e:
         click.secho(e, fg='yellow')
     except Exception as e:

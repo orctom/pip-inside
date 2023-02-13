@@ -4,6 +4,7 @@ import sys
 from typing import Optional
 
 import click
+from pip_inside.utils import misc
 
 from pip_inside.utils.pyproject import PyProject
 
@@ -11,7 +12,7 @@ from pip_inside.utils.pyproject import PyProject
 def handle_add(name: str, group: Optional[str]):
     try:
         pyproject = PyProject.from_toml()
-        name = name.lower().replace('_', '-')
+        name = misc.norm_name(name)
         if pyproject.find_dependency(name, 'main'):
             click.secho("Skip, already installed as main dependency")
             return

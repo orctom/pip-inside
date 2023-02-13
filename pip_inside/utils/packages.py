@@ -10,7 +10,7 @@ import requests
 from InquirerPy import inquirer
 from InquirerPy.base.control import Choice
 
-from . import spinner, version_specifies
+from . import misc, spinner
 
 try:
     from importlib.metadata import PackageNotFoundError, distribution
@@ -62,7 +62,7 @@ def prompt_a_package(again: bool = False):
         click.secho('Failed to fetch version list, please set version menually', fg='cyan')
         version = inquirer.text(message="Version:").execute().strip()
     if version:
-        name = f"{name}{version}" if version_specifies.has_ver_spec(version) else f"{name}=={version}"
+        name = f"{name}{version}" if misc.has_ver_spec(version) else f"{name}=={version}"
     return name
 
 
