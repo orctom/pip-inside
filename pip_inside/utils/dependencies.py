@@ -167,7 +167,7 @@ class Dependencies:
             if parents is not None:
                 parents[name].add(pkg.name)
 
-    def _get_all_project_dependencies(self, exclusions: Optional[List[str]] = None):
+    def _get_all_project_dependencies(self, exclusions: Optional[List[str]] = None) -> List[str]:
         def pkg_deps(pkg: Package):
             name = norm_name(pkg.name)
             if exclusions and (name in exclusions or pkg.name in exclusions):

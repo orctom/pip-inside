@@ -21,6 +21,7 @@ dependencies = [
     "click",
     "inquirerpy",
     "pexpect",
+    "packaging",
 ]
 
 [project.urls]
