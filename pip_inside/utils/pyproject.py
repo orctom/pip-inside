@@ -3,10 +3,10 @@ import os
 from types import SimpleNamespace
 from typing import List, Union
 
-import pkg_resources
 import tomlkit
+from packaging.requirements import Requirement
 
-from pip_inside.utils.version_specifies import get_package_name
+from .version_specifies import get_package_name
 
 
 class PyProject:
@@ -125,11 +125,11 @@ class PyProject:
     def get_dependencies_with_group(self):
         dependencies = {}
         for dep in self.get('project.dependencies', default=[]):
-            dependencies[pkg_resources.Requirement(dep)] = 'main'
+            dependencies[Requirement(dep)] = 'main'
 
         for group, deps in self.get('project.optional-dependencies', default={}).items():
             for dep in deps:
-                dependencies[pkg_resources.Requirement(dep)] = group
+                dependencies[Requirement(dep)] = group
         return dependencies
 
     @staticmethod

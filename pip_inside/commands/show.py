@@ -1,6 +1,5 @@
-from pip_inside.utils.dependencies import Package
+from pip_inside.utils.dependencies import Dependencies
 
 
 def handle_show(unused: bool):
-    pkg = Package.from_unused() if unused else Package.from_project()
-    pkg.print_dependencies()
+    Dependencies().print_non_dependencies() if unused else Dependencies().print_dependencies()

@@ -2,7 +2,6 @@ import collections
 import re
 import shutil
 import subprocess
-import sys
 from datetime import datetime
 from typing import Union
 
@@ -11,9 +10,7 @@ import requests
 from InquirerPy import inquirer
 from InquirerPy.base.control import Choice
 
-from pip_inside.utils import version_specifies
-
-from . import spinner
+from . import spinner, version_specifies
 
 try:
     from importlib.metadata import PackageNotFoundError, distribution
