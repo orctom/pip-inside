@@ -1,4 +1,5 @@
 import collections
+import os
 import shutil
 import site
 from pathlib import Path
@@ -27,17 +28,26 @@ def get_name_fg_by_group(group):
     return COLOR_MAIN if group == 'main' else COLOR_OPTIONAL
 
 
+def get_site_package_path():
+    env_root = Path(shutil.which('python')).parent.parent
+    paths = site.getsitepackages(prefixes=[env_root])
+    path = paths[0]
+    if os.path.exists(path):
+        return path
+
+    return next((env_root / 'lib').glob('python*')) / 'site-packages'
+
+
 class Distributions:
     def __init__(self) -> None:
         self._distributions = self._find_distributions()
 
     def _find_distributions(self) -> Dict[str, pkg_resources.Distribution]:
         distributions: Dict[str, pkg_resources.Distribution] = {}
-        prefix = str(Path(shutil.which('python')).parent.parent)
-        for path_item in site.getsitepackages(prefixes=[prefix]):
-            for dist in pkg_resources.find_distributions(path_item):
-                name = norm_name(dist.key)
-                distributions[name] = dist
+        site_package_path = get_site_package_path()
+        for dist in pkg_resources.find_distributions(site_package_path):
+            name = norm_name(dist.key)
+            distributions[name] = dist
         return distributions
 
     def get_all(self) -> List[pkg_resources.Distribution]:
@@ -150,6 +160,7 @@ class Dependencies:
         dist = self._distributions.get(pkg.name)
         if dist is None:
             pkg.version = '[not installed]'
+            return
         pkg.version = dist.version
         for r in dist.requires():
             name, specs_r = norm_name(r.name), str(r.specifier)
