@@ -21,7 +21,6 @@ COLOR_OPTIONAL = 'magenta'
 COLOR_SUBS = 'white'
 
 
-
 def get_name_fg_by_group(group):
     if group is None:
         return COLOR_SUBS

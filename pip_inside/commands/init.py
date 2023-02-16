@@ -10,8 +10,7 @@ from InquirerPy import inquirer
 from InquirerPy.base.control import Choice
 
 from pip_inside import Aborted
-from pip_inside.utils import misc, packages
-from pip_inside.utils.licenses import LICENSES
+from pip_inside.utils import licenses, misc, packages
 
 
 def handle_init():
@@ -52,7 +51,7 @@ def collect_metadata():
     author = inquirer.text(message="Author name:", default=defaults.author_name).execute()
     email = inquirer.text(message="Author email:", default=defaults.author_email).execute()
 
-    license_choices = [Choice('skip')] + [Choice(value=n, name=f"{n} ({d})") for n, d in LICENSES.items()]
+    license_choices = [Choice('skip')] + [Choice(value=n, name=f"{n} ({d})") for n, d in licenses.LICENSES.items()]
     license_name = inquirer.fuzzy(message="License:", choices=license_choices, vi_mode=True, wrap_lines=True).execute()
     requires_python = inquirer.text(message="requires-python:", default=defaults.requires_python, mandatory=True).execute()
     homepage = inquirer.text(message="Home page:").execute()
@@ -117,9 +116,10 @@ def build_toml(meta):
         project_table.add('authors', authors_list)
     project_table.add('readme', 'README.md')
     license_inline = tomlkit.inline_table()
-    license_inline.update({'file': 'LICENSE'})
-    project_table.add('license', license_inline)
-    project_table.add('license-expression', meta.license)
+    if meta.license != 'skip':
+        license_inline.update({'file': 'LICENSE'})
+        project_table.add('license', license_inline)
+        project_table.add('license-expression', meta.license)
     project_table.add('dynamic', tomlkit.array('["version"]'))
     project_table.add('requires-python', meta.requires_python)
     dependencies_list = tomlkit.array()

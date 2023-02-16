@@ -26,6 +26,8 @@ def _create_venv():
 
 
 def _spaw_new_shell():
+    if os.environ.get('VIRTUAL_ENV') is not None:
+        return
     def resize(*args, **kwargs) -> None:
         terminal = shutil.get_terminal_size()
         p.setwinsize(terminal.lines, terminal.columns)
