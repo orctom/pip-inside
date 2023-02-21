@@ -8,6 +8,7 @@ from pathlib import Path
 import pexpect
 
 from pip_inside import Aborted
+from pip_inside.utils.misc import P_KV_SEP
 
 
 def handle_shell():
@@ -38,6 +39,8 @@ def _spaw_new_shell(is_1st_time: bool):
     p = pexpect.spawn(shell, ['-i'], dimensions=(terminal.lines, terminal.columns))
     if shell.endswith('/zsh'):
         p.setecho(False)
+    if (conda_env := _find_conda_env()) is not None:
+        p.sendline(f"conda activate {conda_env}")
     p.sendline('source .venv/bin/activate')
     if is_1st_time:
         p.sendline('pip install -U pip')
@@ -45,3 +48,15 @@ def _spaw_new_shell(is_1st_time: bool):
     p.interact(escape_character=None)
     p.close()
     sys.exit(p.exitstatus)
+
+
+def _find_conda_env():
+    try:
+        with open('.venv/pyvenv.cfg') as f:
+            values = dict(P_KV_SEP.split(x.strip()) for x in f.readlines())
+            home = values.get('home')
+            if home is None or 'conda' not in home:
+                return None
+            return home[:-4] if home.endswith('/bin') else home
+    except Exception as e:
+        return None
