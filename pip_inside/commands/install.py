@@ -22,7 +22,10 @@ def _install_from_pi_lock(groups: List[str]):
         with open('pi.lock', 'r') as f:
             data = tomlkit.load(f)
 
-        deps = list(itertools.chain(*[data.get(group, []) for group in groups]))
+        if 'all' in groups:
+            deps = list(itertools.chain(*data.values()))
+        else:
+            deps = list(itertools.chain(*[data.get(group, []) for group in groups]))
         cmd = [shutil.which('python'), '-m', 'pip', 'install', *deps]
         subprocess.run(cmd, stderr=sys.stderr, stdout=sys.stdout)
     except subprocess.CalledProcessError:

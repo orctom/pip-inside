@@ -130,7 +130,7 @@ def build_toml(meta):
     if meta.homepage:
         urls_table = tomlkit.table()
         urls_table.add('homepage', meta.homepage)
-        project_table.add('url', urls_table)
+        project_table.add('urls', urls_table)
 
     build_system_table = tomlkit.table()
     build_system_table.add('requires', tomlkit.array('["flit_core>=3.8.0,<4"]'))
@@ -167,6 +167,6 @@ def write_license(meta):
 def write_root_module_with_version(meta):
     module_name = misc.norm_module(meta.name)
     os.makedirs(module_name, exist_ok=True)
-    with open(f"{module_name}/__init__.py", 'w') as f:
+    with open(f"{module_name}/__init__.py", 'w+') as f:
         f.write(f"__version__ = '{meta.version}'")
         click.secho(f"Added '{module_name}/__init__.py'", fg='bright_cyan')

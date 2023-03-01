@@ -73,7 +73,7 @@ def add(name, group, interactive: bool, v: bool):
 
 @cli.command()
 @click.argument('name', required=False, type=str)
-@click.option('--group', default='main', show_default=True, help='dependency group')
+@click.option('-G', '--group', default='main', show_default=True, help='dependency group')
 @click.option('-v', 'v', is_flag=True, default=False, help="verbovse")
 def remove(name, group, v: bool):
     """Remove a package from project dependencies"""
@@ -93,9 +93,10 @@ def remove(name, group, v: bool):
 
 
 @cli.command()
-@click.option('--groups', multiple=True, default=['main'], show_default=True, help='dependency groups')
+@click.option('-G', '--groups', multiple=True, default=['main'], show_default=True, help='dependency groups')
+@click.option('-A', '--all', is_flag=True, default=False, help="verbovse")
 @click.option('-v', 'v', is_flag=True, default=False, help="verbovse")
-def install(groups: List[str], v: bool):
+def install(groups: List[str], all: bool, v: bool):
     """Install project dependencies by groups"""
     try:
         from .commands.install import handle_install
@@ -104,6 +105,8 @@ def install(groups: List[str], v: bool):
             groups = groups[0].split(',')
         elif len(groups) == 0:
             groups = ['main']
+        if all:
+            groups = ['all']
         handle_install(groups)
     except Aborted as e:
         click.secho(e, fg='yellow')
@@ -203,7 +206,8 @@ def freeze(v: bool):
 
 @cli.command()
 @click.option('-s', '--short', is_flag=True, default=False, help="show short version")
-def version(short: bool):
+@click.option('-v', 'v', is_flag=True, default=False, help="verbovse")
+def version(short: bool, v: bool):
     """Show version of current project"""
     try:
         from .commands.version import handle_version
@@ -212,6 +216,9 @@ def version(short: bool):
         click.secho(e, fg='yellow')
     except Exception as e:
         click.secho(e, fg='red')
+        if v:
+            import traceback
+            click.secho(traceback.format_exc(), fg='red')
 
 
 if __name__ == "__main__":
