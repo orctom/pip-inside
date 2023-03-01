@@ -12,11 +12,11 @@ def handle_version(short: bool = False):
     module = pyproject.get('project.name')
     filepath = f"{misc.norm_module(module)}/__init__.py"
     try:
-        s = spec_from_file_location(module, filepath)
+        s = spec_from_file_location('hello', filepath)
         m = module_from_spec(s)
         s.loader.exec_module(m)
         ver = m.__version__
-    except ModuleNotFoundError:
+    except ModuleNotFoundError:  # incase running `pi` outside project's venv
         text = open(filepath).read()
         p = re.compile(r'__version__\s*=\s*[\'\"]([a-z0-9.-]+)[\'\"]')
         m = p.search(text)
