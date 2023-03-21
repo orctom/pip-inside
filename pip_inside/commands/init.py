@@ -1,5 +1,4 @@
 import os
-import pathlib
 import subprocess
 from datetime import date
 from types import SimpleNamespace
@@ -10,7 +9,7 @@ from InquirerPy import inquirer
 from InquirerPy.base.control import Choice
 
 from pip_inside import Aborted
-from pip_inside.utils import licenses, misc, packages
+from pip_inside.utils import licenses, misc, packages, versions
 
 
 def handle_init():
@@ -157,8 +156,8 @@ def write_readme(meta):
 def write_license(meta):
     if os.path.exists('LICENSE') or meta.license == 'skip':
         return
-    licenses_dir = pathlib.Path(__file__).parent / 'licenses'
-    with (licenses_dir / f"{meta.license}.txt").open() as f_in, open('LICENSE', 'w') as f_out:
+    license_file = licenses.get_file(meta.license)
+    with license_file.open() as f_in, open('LICENSE', 'w') as f_out:
         year = date.today().year
         f_out.write(f_in.read().format(year=year, author=meta.author))
         click.secho(f"Added 'LICENSE'", fg='bright_cyan')
@@ -167,6 +166,23 @@ def write_license(meta):
 def write_root_module_with_version(meta):
     module_name = misc.norm_module(meta.name)
     os.makedirs(module_name, exist_ok=True)
-    with open(f"{module_name}/__init__.py", 'w+') as f:
-        f.write(f"__version__ = '{meta.version}'")
+    with open(f"{module_name}/__init__.py", 'r+') as f:
+        version_line = f"__version__ = '{meta.version}'\n"
+        lines = f.readlines()
+        for i, line in enumerate(lines):
+            m = versions.P.search(line)
+            if m is None:
+                continue
+            add_version_line = False
+            version = m.groups()[0]
+            if version == meta.version:
+                return
+            lines[i] = version_line
+
+        f.seek(0)
+        if add_version_line:
+            lines.insert(0, version_line)
+        for line in lines:
+            f.write(line)
+        f.truncate()
         click.secho(f"Added '{module_name}/__init__.py'", fg='bright_cyan')
