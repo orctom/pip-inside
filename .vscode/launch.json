@@ -1,0 +1,33 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "install",
+            "type": "python",
+            "request": "launch",
+            "program": "-m",
+            "env": {},
+            "console": "integratedTerminal",
+            "args": [
+                "pip_inside.main",
+                "install"
+            ],
+            "justMyCode": false
+        },
+        {
+            "name": "show",
+            "type": "python",
+            "request": "launch",
+            "program": "-m",
+            "env": {},
+            "console": "integratedTerminal",
+            "args": [
+                "pip_inside.main",
+                "show",
+                "--unused",
+                "-v"
+            ],
+            "justMyCode": false
+        }
+    ]
+}

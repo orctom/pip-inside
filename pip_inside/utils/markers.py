@@ -36,6 +36,8 @@ def filter_requirements(requirements: List[Requirement]):
 
 def filter_requirement(require: Requirement):
     try:
+        if require.marker is None:
+            return require
         if require.marker.evaluate(os.environ):
             require.marker._markers = filter_custom_markers(require.marker._markers)
             return require

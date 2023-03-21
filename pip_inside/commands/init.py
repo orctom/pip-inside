@@ -1,6 +1,8 @@
 import os
+import shutil
 import subprocess
 from datetime import date
+from pathlib import Path
 from types import SimpleNamespace
 
 import click
@@ -26,6 +28,8 @@ def handle_init():
     write_toml(toml)
     write_readme(meta)
     write_license(meta)
+    write_resource('.gitignore')
+    write_resource('.dockerignore')
     write_root_module_with_version(meta)
 
 
@@ -161,6 +165,15 @@ def write_license(meta):
         year = date.today().year
         f_out.write(f_in.read().format(year=year, author=meta.author))
         click.secho(f"Added 'LICENSE'", fg='bright_cyan')
+
+
+def write_resource(filename: str):
+    target = Path(filename)
+    if target.exists():
+        return
+    src = Path(__file__).parent / 'resources' / filename
+    shutil.copyfile(src, target)
+    click.secho(f"Added '{filename}'", fg='bright_cyan')
 
 
 def write_root_module_with_version(meta):
