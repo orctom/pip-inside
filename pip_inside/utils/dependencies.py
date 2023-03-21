@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Set
 
 import click
-import pkg_resources
+from pkg_resources import Distribution, Requirement, find_distributions
 
 from .misc import norm_name
 from .pyproject import PyProject
@@ -17,7 +17,7 @@ DEPENDENCIES_COMMON = [
     'requests', 'urllib3', 'wheel', 'tomlkit', 'pip-inside',
 ]
 COLOR_MAIN = 'blue'
-COLOR_OPTIONAL = 'magenta'
+COLOR_OPTIONAL = 'green'
 COLOR_SUBS = 'white'
 
 
@@ -41,18 +41,17 @@ class Distributions:
     def __init__(self) -> None:
         self._distributions = self._find_distributions()
 
-    def _find_distributions(self) -> Dict[str, pkg_resources.Distribution]:
-        distributions: Dict[str, pkg_resources.Distribution] = {}
+    def _find_distributions(self) -> Dict[str, Distribution]:
+        distributions: Dict[str, Distribution] = {}
         site_package_path = get_site_package_path()
-        for dist in pkg_resources.find_distributions(site_package_path):
-            name = norm_name(dist.key)
-            distributions[name] = dist
+        for dist in find_distributions(site_package_path):
+            distributions[dist.key] = dist
         return distributions
 
-    def get_all(self) -> List[pkg_resources.Distribution]:
+    def get_all(self) -> List[Distribution]:
         return list(self._distributions.values())
 
-    def get(self, name) -> pkg_resources.Distribution:
+    def get(self, name) -> Distribution:
         return self._distributions.get(norm_name(name))
 
 
@@ -66,7 +65,8 @@ class TreeEntry:
 
     def echo(self):
         name = click.style(self.package.name, fg=get_name_fg_by_group(self.package.group))
-        click.echo(f"{self.prefix} {name} [required: {self.package.specs or '*'}, installed: {self.package.version}]")
+        installed = f"installed: {self.package.version}" if self.package.version else click.style('[not installed]', fg='yellow')
+        click.echo(f"{self.prefix} {name} [required: {self.package.specs or '*'}, {installed}]")
 
 
 class Package:
@@ -90,7 +90,8 @@ class Package:
 
     def echo(self):
         name = click.style(self.name, fg=get_name_fg_by_group(self.group))
-        click.echo(f"{name} [required: {self.specs or '*'}, installed: {self.version}]")
+        installed = f"installed: {self.version}" if self.version else click.style('[not installed]', fg='yellow')
+        click.echo(f"{name} [required: {self.specs or '*'}, {installed}]")
 
     def tree_list(self, skip='│', branch='├', last='└', hyphen='─', prefix='') -> str:
         n_children = len(self.children)
@@ -119,18 +120,17 @@ class Dependencies:
     def __init__(self) -> None:
         self._distributions = Distributions()
         self._pyproject = PyProject.from_toml()
-        self._direct_dependencies = {
-            r.name: (str(r.specifier), group)
-            for r, group in self._pyproject.get_dependencies_with_group().items()
-        }
         self._cyclic_dendencies = []
         self._root: Package = Package(ROOT)
         self._root_non_dep: Package = Package(ROOT)
+        self._direct_dependencies = {
+            r.key: Package(r.key, specs=str(r.specifier), group=group, parent=self._root)
+            for r, group in self._pyproject.get_dependencies_with_group().items()
+        }
 
     def load_dependencies(self):
         self._root.children.clear()
-        for name, (specs, group) in self._direct_dependencies.items():
-            child = Package(name, specs=specs, group=group, parent=self._root)
+        for child in self._direct_dependencies.values():
             self._root.children.append(child)
             self._load_children(child)
         return self
@@ -158,7 +158,6 @@ class Dependencies:
     def _load_children(self, pkg: Package, exclusion: Optional[Set[str]] = None, parents: Optional[Dict[str, Set[str]]] = None):
         dist = self._distributions.get(pkg.name)
         if dist is None:
-            pkg.version = '[not installed]'
             return
         pkg.version = dist.version
         for r in dist.requires():
@@ -215,8 +214,8 @@ class Dependencies:
             for entry in child.tree_list():
                 entry.echo()
 
-    def get_unused_dependencies_for(self, name: str) -> List[str]:
-        name = norm_name(name)
+    def get_unused_dependencies_for(self, require: Requirement) -> List[str]:
+        name = require.key
         other_in_use = set(self._get_all_project_dependencies(exclusions=[name]))
         children = {norm_name(r.name) for r in self._distributions.get(name).requires()}
         return list(children - other_in_use)

@@ -38,25 +38,15 @@ def init(v: bool):
 @cli.command()
 @click.argument('name', required=False, type=str)
 @click.option('-G', '--group', default='main', help='dependency group')
-@click.option('-i', 'interactive', is_flag=True, default=False, help="interactive mode")
 @click.option('-v', 'v', is_flag=True, default=False, help="verbovse")
-def add(name, group, interactive: bool, v: bool):
+def add(name, group, v: bool):
     """Add a package as project dependency"""
     try:
         from .commands.add import handle_add
-        from .utils.misc import ver_has_spec
         from .utils.packages import prompt_a_package
         click.secho(f"[python] {shutil.which('python')}", fg='cyan')
         if name:
-            if interactive and ver_has_spec(name) :
-                interactive = False
-                click.secho('Off interactive mode, found version specifier in package name', fg='yellow')
-        else:
-            interactive = True
-
-        if not interactive:
             handle_add(name, group)
-            return
 
         name = prompt_a_package()
         while name is not None:

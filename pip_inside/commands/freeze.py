@@ -10,7 +10,7 @@ def handle_freeze():
     dependencies = Dependencies().load_dependencies()
     requirements = collections.defaultdict(list)
     for child in dependencies._root.children:
-        requirements[child.group].append(f"{child.name}=={child.version}")
+        requirements[child.group].append(f"{child.name}=={child.version_installed}")
         for group, dep in _find_installed_child(child):
             requirements[group or child.group].append(dep)
     with open('pi.lock', 'w') as f:
@@ -20,6 +20,6 @@ def handle_freeze():
 
 def _find_installed_child(pkg: Package):
     for child in pkg.children:
-        yield child.group, f"{child.name}=={child.version}"
+        yield child.group, f"{child.name}=={child.version_installed}"
         for group, dep in _find_installed_child(child):
             yield group or child.group, dep

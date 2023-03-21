@@ -1,20 +1,19 @@
-import itertools
 import os
-from types import SimpleNamespace
-from typing import Any, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 import tomlkit
-from packaging.requirements import Requirement
+from pkg_resources import Requirement
 
 from pip_inside import Aborted
 
-from .misc import get_package_name, norm_module
+from .misc import norm_module
 
 
 class PyProject:
     def __init__(self, path='pyproject.toml') -> None:
         self.path = path
         self._meta = {}
+        self._dependencies: Dict[str, List[Requirement]] = {}
 
     @classmethod
     def from_toml(cls, path='pyproject.toml'):
@@ -22,17 +21,19 @@ class PyProject:
         pyproject.load()
         return pyproject
 
-    def load(self):
-        if not os.path.exists(self.path):
-            raise ValueError(f"'{self.path}' not found")
+    def _load_dependencies(self):
+        key_main = 'project.dependencies'
+        key_optionals = 'project.optional-dependencies'
+        self._dependencies['main'] = [Requirement(dep) for dep in self.get(key_main, default=[])]
+        for key, deps in self.get(key_optionals, default={}):
+            self._dependencies[key] = [Requirement(dep) for dep in deps]
 
-        with open(self.path, 'r') as f:
-            self._meta = tomlkit.load(f)
-        self.validate()
-
-    def flush(self):
-        with open(self.path, "w") as f:
-            tomlkit.dump(self._meta, f)
+    def _dump_dependencies(self):
+        for key, requires in self._dependencies.items():
+            if key == 'main':
+                self.set('project.dependencies', [str(r) for r in requires])
+            else:
+                self.set(f"project.optional-dependencies.{group}", [str(r) for r in requires])
 
     def validate(self):
         def check_exists(attr: str, msg: Optional[str] = None):
@@ -56,6 +57,20 @@ class PyProject:
         check_exists('project.requires-python')
         check_exists('build-system')
         check_equals('build-system.build-backend', 'flit_core.buildapi', 'only supports `flit_core` backend')
+
+    def load(self):
+        if not os.path.exists(self.path):
+            raise ValueError(f"'{self.path}' not found")
+
+        with open(self.path, 'r') as f:
+            self._meta = tomlkit.load(f)
+        self.validate()
+        self._load_dependencies()
+
+    def flush(self):
+        self._dump_dependencies()
+        with open(self.path, "w") as f:
+            tomlkit.dump(self._meta, f)
 
     def update(self, key: str, value: Union[str, int, float, dict, list]):
         data = self._meta
@@ -91,76 +106,44 @@ class PyProject:
         data[attrs[-1]] = value
         return True
 
-    def add_dependency(self, name: str, group: str = 'main'):
-        if group == 'main':
-            key = 'project.dependencies'
-        else:
-            key = f"project.optional-dependencies.{group}"
-        dependencies = self.get(key, create_if_missing=True, default=[])
-        if name not in dependencies:
-            dependencies.append(name)
+    def add_dependency(self, require: Requirement, group: str = 'main'):
+        do_add = True
+        dependencies = self._dependencies.get(group)
+        if dependencies:
+            for i, dep in enumerate(dependencies):
+                if require.key != dep.key:
+                    continue
+                if str(require) == str(dep):
+                    return
+                do_add = False
+                dependencies[i] = require
 
-    def remove_dependency(self, name: str, group: str = 'main'):
-        if group == 'main':
-            key = 'project.dependencies'
-        else:
-            key = f"project.optional-dependencies.{group}"
-        dependencies = self.get(key, create_if_missing=False)
-        if dependencies is None or len(dependencies) == 0:
+        if do_add:
+            dependencies.append(require)
+
+    def remove_dependency(self, require: Requirement, group: str = 'main'):
+        dependencies = self._dependencies.get(group)
+        if not dependencies:
             return False
-        package_name = get_package_name(name)
-        remove_list = [dep for dep in dependencies if get_package_name(dep) == package_name]
-        if len(remove_list) == 0:
+        deps = [dep for dep in dependencies if dep.key != require.key]
+        if len(deps) == len(dependencies):
             return False
-        for dep in remove_list:
-            try:
-                dependencies.remove(dep)
-            except ValueError:
-                pass
+        self._dependencies[group] = deps
         return True
 
-    def find_dependency(self, name: str, group: str = 'main'):
-        package_name = get_package_name(name)
-        for dep in self.get_dependencies(group):
-            pkg_name = get_package_name(dep)
-            if pkg_name == package_name:
+    def find_dependency(self, require: Requirement, group: str = 'main'):
+        dependencies = self._dependencies.get(group, [])
+        for dep in dependencies:
+            if dep.key == require.key:
                 return dep
         return None
 
-    @staticmethod
-    def _is_in_dependencies(name: str, dependencies: List[str]) -> bool:
-        if name in dependencies:
-            return True
-        if name in set([get_package_name(dep) for dep in dependencies]):
-            return True
-        return False
-
     def get_dependencies(self, group: str = 'main'):
-        if group == 'all':
-            key_main = 'project.dependencies'
-            key_optionals = 'project.optional-dependencies'
-            deps_main = self.get(key_main, default=[])
-            deps_optionals = list(itertools.chain(*self.get(key_optionals, default={}).values()))
-            return deps_main + deps_optionals
+        return self._dependencies.get(group)
 
-        if group == 'main':
-            return self.get('project.dependencies', default=[])
-        else:
-            return self.get(f"project.optional-dependencies.{group}", default=[])
-
-    def get_dependencies_with_group(self):
-        dependencies = {}
-        for dep in self.get('project.dependencies', default=[]):
-            dependencies[Requirement(dep)] = 'main'
-
-        for group, deps in self.get('project.optional-dependencies', default={}).items():
+    def get_dependencies_with_group(self) -> Dict[Requirement, str]:
+        dependencies: Dict[Requirement, str] = {}
+        for group, deps in self._dependencies.items():
             for dep in deps:
-                dependencies[Requirement(dep)] = group
+                dependencies[dep] = group
         return dependencies
-
-    @staticmethod
-    def get_template():
-        return SimpleNamespace(
-            name=os.path.basename(os.getcwd()),
-            description=''
-        )

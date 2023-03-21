@@ -41,7 +41,7 @@ def _install_from_pyproject_toml(groups: List[str]):
             if deps is None:
                 click.secho(f"Dependencies group: {group} not found in pyproject.toml", fg='yellow')
                 continue
-            dependencies.extend(deps)
+            dependencies.extend([str(dep) for dep in deps])
         if len(dependencies) == 0:
             click.secho('Nothing to install, no dependencies specified in pyproject.toml')
             return
