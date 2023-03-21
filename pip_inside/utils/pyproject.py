@@ -5,6 +5,7 @@ import tomlkit
 from pkg_resources import Requirement
 
 from pip_inside import Aborted
+from pip_inside.utils import markers
 
 from .misc import norm_module
 
@@ -33,7 +34,7 @@ class PyProject:
             if key == 'main':
                 self.set('project.dependencies', [str(r) for r in requires])
             else:
-                self.set(f"project.optional-dependencies.{group}", [str(r) for r in requires])
+                self.set(f"project.optional-dependencies.{key}", [str(r) for r in requires])
 
     def validate(self):
         def check_exists(attr: str, msg: Optional[str] = None):
@@ -114,12 +115,13 @@ class PyProject:
                 if require.key != dep.key:
                     continue
                 if str(require) == str(dep):
-                    return
+                    return False
                 do_add = False
                 dependencies[i] = require
 
         if do_add:
             dependencies.append(require)
+        return True
 
     def remove_dependency(self, require: Requirement, group: str = 'main'):
         dependencies = self._dependencies.get(group)
@@ -131,15 +133,11 @@ class PyProject:
         self._dependencies[group] = deps
         return True
 
-    def find_dependency(self, require: Requirement, group: str = 'main'):
-        dependencies = self._dependencies.get(group, [])
-        for dep in dependencies:
-            if dep.key == require.key:
-                return dep
-        return None
-
-    def get_dependencies(self, group: str = 'main'):
-        return self._dependencies.get(group)
+    def get_for_install(self, group: str = 'main'):
+        deps = self._dependencies.get(group)
+        if deps is None:
+            return None
+        return markers.filter_requirements(deps)
 
     def get_dependencies_with_group(self) -> Dict[Requirement, str]:
         dependencies: Dict[Requirement, str] = {}

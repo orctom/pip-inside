@@ -19,13 +19,12 @@ def handle_add(name: str, group: Optional[str]):
                 return
         pyproject = PyProject.from_toml()
         require = Requirement(name)
-        if pyproject.find_dependency(require, 'main'):
+        if not pyproject.add_dependency(require, group):
             click.secho("Skip, already installed as main dependency")
             return
 
         cmd = [shutil.which('python'), '-m', 'pip', 'install', str(require)]
         if subprocess.run(cmd, stderr=sys.stderr, stdout=sys.stdout).returncode == 0:
-            pyproject.add_dependency(require, group)
             pyproject.flush()
     except subprocess.CalledProcessError:
         pass

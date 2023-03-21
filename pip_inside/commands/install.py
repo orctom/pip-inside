@@ -37,7 +37,7 @@ def _install_from_pyproject_toml(groups: List[str]):
         pyproject = PyProject.from_toml()
         dependencies = []
         for group in groups:
-            deps = pyproject.get_dependencies(group)
+            deps = pyproject.get_for_install(group)
             if deps is None:
                 click.secho(f"Dependencies group: {group} not found in pyproject.toml", fg='yellow')
                 continue
