@@ -26,7 +26,7 @@ class PyProject:
         key_main = 'project.dependencies'
         key_optionals = 'project.optional-dependencies'
         self._dependencies['main'] = [Requirement(dep) for dep in self.get(key_main, default=[])]
-        for key, deps in self.get(key_optionals, default={}):
+        for key, deps in self.get(key_optionals, default={}).items():
             self._dependencies[key] = [Requirement(dep) for dep in deps]
 
     def _dump_dependencies(self):
