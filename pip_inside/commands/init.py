@@ -179,7 +179,8 @@ def write_resource(filename: str):
 def write_root_module_with_version(meta):
     module_name = misc.norm_module(meta.name)
     os.makedirs(module_name, exist_ok=True)
-    with open(f"{module_name}/__init__.py", 'r+') as f:
+    with open(f"{module_name}/__init__.py", 'a+') as f:
+        f.seek(0)
         version_line = f"__version__ = '{meta.version}'\n"
         lines = f.readlines()
         for i, line in enumerate(lines):
