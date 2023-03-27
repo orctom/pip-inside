@@ -47,11 +47,11 @@ def add(name, group, v: bool):
         click.secho(f"[python] {shutil.which('python')}", fg='cyan')
         if name:
             handle_add(name, group)
-
-        name = prompt_a_package()
-        while name is not None:
-            handle_add(name, group)
-            name = prompt_a_package(True)
+        else:
+            name = prompt_a_package()
+            while name is not None:
+                handle_add(name, group)
+                name = prompt_a_package(True)
     except Aborted as e:
         click.secho(e, fg='yellow')
     except Exception as e:
