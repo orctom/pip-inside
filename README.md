@@ -1,22 +1,12 @@
 # pip-inside
 
-I use `pip`, so I have `requirements.txt`, and might `requirements-dev.txt` as well.
+Like [poetry](https://python-poetry.org/), but uses `pip` to maintain dependencies.
 
-Later when I started to configure my `black`, `isort`, `pypy`..., I have `pyproject.toml`.
-
-Then I  wanted to move `requrements.txt` into `pyproject.toml`, as it's feature-rich, then I saw [poetry](https://python-poetry.org/).
-
-After used poetry for months, I started to missing `pip`, as `poetry`:
- - sometimes slow, and sometimes quite slow
- - hash mismatch, then I have to delete my entire cache, and download everything again
- - when you have huge dependencies like `torch` (~2 GB), too bad to install a general version, then a working version later in `toe` plugin
-
-So this `pip-inside` comes out. It's just `flit-core` with `pip` as the dependency installer.
+Uses `flit-core` as the `build-backend`.
 
 
-**NOTICES**:
+**CONVENSIONS**:
 
-Only supports:
  - dynamic `version` (`__version__ = 'your version'` in {root_module}/__init__.py)
  - non-dynamic `description` (in `pyproject.toml`)
  - no `src` folder in project root
@@ -37,7 +27,7 @@ pip install pip-inside
  - pi
 
 ```shell
-pi
+> pi
 Usage: pi [OPTIONS] COMMAND [ARGS]...
 
 Options:
@@ -47,9 +37,12 @@ Options:
 Commands:
   add      Add a package as project dependency
   build    Build the wheel and sdist
+  freeze   Freeze dependencies into 'pi.lock'
   init     Init project in current directory
   install  Install project dependencies by groups
   publish  Publish the wheel and sdist to remote repository
   remove   Remove a package from project dependencies
+  shell    Ensure '.venv' virtualenv, and new shell into it
+  show     Show dependency tree
   version  Show version of current project
 ```
