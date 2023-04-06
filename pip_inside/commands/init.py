@@ -183,6 +183,7 @@ def write_root_module_with_version(meta):
         f.seek(0)
         version_line = f"__version__ = '{meta.version}'\n"
         lines = f.readlines()
+        add_version_line = True
         for i, line in enumerate(lines):
             m = versions.P.search(line)
             if m is None:
