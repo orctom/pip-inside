@@ -1,4 +1,3 @@
-import itertools
 import os
 import shutil
 import subprocess
@@ -17,34 +16,39 @@ def handle_install(groups: List[str]):
 
 def _install_from_pi_lock(groups: List[str]):
     if not os.path.exists('pi.lock'):
-        return False
-    try:
-        with open('pi.lock', 'r') as f:
-            data = tomlkit.load(f)
+        return
 
-        if 'all' in groups:
-            deps = list(itertools.chain(*data.values()))
-        else:
-            deps = list(itertools.chain(*[data.get(group, []) for group in groups]))
-        cmd = [shutil.which('python'), '-m', 'pip', 'install', *deps]
-        subprocess.run(cmd, stderr=sys.stderr, stdout=sys.stdout)
-    except subprocess.CalledProcessError:
-        pass
+    with open('pi.lock', 'r') as f:
+        data = tomlkit.load(f)
+
+    if '_all_' in groups:
+        for group, deps in data.items():
+            _install_group(group, deps)
+    else:
+        for group in groups:
+            _install_group(group, data.get(group, []))
 
 
 def _install_from_pyproject_toml(groups: List[str]):
-    try:
-        pyproject = PyProject.from_toml()
-        dependencies = []
+    pyproject = PyProject.from_toml()
+
+    if '_all_' in groups:
+        for group, deps in pyproject.get_dependencies_for_install().items():
+            _install_group(group, deps)
+
+    else:
         for group in groups:
             deps = pyproject.get_for_install(group)
-            if deps is None:
-                click.secho(f"Dependencies group: {group} not found in pyproject.toml", fg='yellow')
-                continue
-            dependencies.extend([str(dep) for dep in deps])
-        if len(dependencies) == 0:
-            click.secho('Nothing to install, no dependencies specified in pyproject.toml')
-            return
+            _install_group(group, deps)
+
+
+def _install_group(group: str, dependencies: list):
+    if dependencies is None or len(dependencies) == 0:
+        click.secho(f"Group: {group}, nothing to install", fg='cyan')
+        return
+
+    click.secho(f"Group: {group}", fg='cyan')
+    try:
         cmd = [shutil.which('python'), '-m', 'pip', 'install', *dependencies]
         subprocess.run(cmd, stderr=sys.stderr, stdout=sys.stdout)
     except subprocess.CalledProcessError:

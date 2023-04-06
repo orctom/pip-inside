@@ -40,8 +40,14 @@ def check_pyproject_toml():
     try:
         with open('pyproject.toml', 'r') as f:
             data = tomlkit.load(f)
-        if 'build-system' in data:
-            raise Aborted(f"Skip, 'pyproject.toml' file with 'build-system' already exists")
+        build_system = data.get('build_system')
+        if build_system is not None:
+            if build_system.get('build-backend') == 'flit_core.buildapi':
+                raise Aborted(f"Skip, 'pyproject.toml' file already exists")
+            else:
+                raise Aborted(f"Skip, 'pyproject.toml' file already exists with unsupported 'build-system', only supports 'flit_core.buildapi'")
+    except Aborted as e:
+        raise e
     except Exception as e:
         raise Aborted(f"Skip, 'pyproject.toml' already exists, and failed to load: {e}")
 
@@ -177,27 +183,54 @@ def write_resource(filename: str):
 
 
 def write_root_module_with_version(meta):
+
+    version_line = f"__version__ = '{meta.version}'\n"
     module_name = misc.norm_module(meta.name)
     os.makedirs(module_name, exist_ok=True)
-    with open(f"{module_name}/__init__.py", 'a+') as f:
-        f.seek(0)
-        version_line = f"__version__ = '{meta.version}'\n"
-        lines = f.readlines()
-        add_version_line = True
-        for i, line in enumerate(lines):
-            m = versions.P.search(line)
-            if m is None:
-                continue
-            add_version_line = False
-            version = m.groups()[0]
-            if version == meta.version:
-                return
-            lines[i] = version_line
+    path = f"{module_name}/__init__.py"
 
-        f.seek(0)
-        if add_version_line:
-            lines.insert(0, version_line)
-        for line in lines:
-            f.write(line)
-        f.truncate()
+    is_exists = os.path.exists(path)
+    if is_exists:
+        with open(path, 'a+') as f:
+            f.seek(0)
+            lines = f.readlines()
+            add_version_line = True
+            for i, line in enumerate(lines):
+                m = versions.P.search(line)
+                if m is None:
+                    continue
+                add_version_line = False
+                version = m.groups()[0]
+                if version == meta.version:
+                    return
+                lines[i] = version_line
+
+            f.truncate(0)
+            if add_version_line:
+                i = _add_version_position(lines)
+                lines.insert(i, version_line)
+            for line in lines:
+                f.write(line)
+        click.secho(f"Updated '{module_name}/__init__.py'", fg='bright_cyan')
+
+    else:
+        with open(path, 'w') as f:
+            f.write(version_line)
         click.secho(f"Added '{module_name}/__init__.py'", fg='bright_cyan')
+
+
+def _add_version_position(lines: list):
+    saw_contents = False
+    for i, line in enumerate(lines):
+        line = line.strip()
+        if not line:
+            if not saw_contents:
+                continue
+            else:
+                return i
+
+        saw_contents = True
+        if line.startswith('#'):
+            continue
+        return i
+    return len(lines)

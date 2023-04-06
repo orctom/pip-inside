@@ -139,6 +139,12 @@ class PyProject:
             return None
         return markers.filter_requirements(deps)
 
+    def get_dependencies_for_install(self) -> Dict[str, List[str]]:
+        return {
+            group: markers.filter_requirements(deps)
+            for group, deps in self._dependencies.items()
+        }
+
     def get_dependencies_with_group(self) -> Dict[Requirement, str]:
         dependencies: Dict[Requirement, str] = {}
         for group, deps in self._dependencies.items():
