@@ -13,8 +13,7 @@ from .pyproject import PyProject
 
 ROOT = 'root'
 DEPENDENCIES_COMMON = [
-    'pip', 'certifi', 'setuptools', 'ipython', 'poetry',
-    'requests', 'urllib3', 'wheel', 'tomlkit', 'pip-inside',
+    'pip', 'certifi', 'setuptools', 'ipython', 'poetry', 'requests', 'idna', 'urllib3', 'wheel', 'tomlkit', 'pip-inside',
 ]
 COLOR_MAIN = 'blue'
 COLOR_OPTIONAL = 'green'
@@ -71,7 +70,13 @@ class TreeEntry:
 
 class Package:
 
-    def __init__(self,name: str, *, specs: str = None, group: str = None, version: str = None, parent: 'Package' = None) -> None:
+    def __init__(self,
+                 name: str,
+                 *,
+                 specs: str = None,
+                 group: str = None,
+                 version: str = None,
+                 parent: 'Package' = None) -> None:
         self.name = name
         self.specs = specs
         self.group = group
