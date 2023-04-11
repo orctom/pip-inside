@@ -13,7 +13,7 @@ from .misc import norm_module
 class PyProject:
     def __init__(self, path='pyproject.toml') -> None:
         self.path = path
-        self._meta = {}
+        self._meta: tomlkit.TOMLDocument = tomlkit.TOMLDocument()
         self._dependencies: Dict[str, List[Requirement]] = {}
 
     @classmethod
@@ -31,10 +31,14 @@ class PyProject:
 
     def _dump_dependencies(self):
         for key, requires in self._dependencies.items():
+            deps = tomlkit.array()
+            for r in requires:
+                deps.add_line(str(r))
+            deps = deps.multiline(True)
             if key == 'main':
-                self.set('project.dependencies', [str(r) for r in requires])
+                self.set('project.dependencies', deps)
             else:
-                self.set(f"project.optional-dependencies.{key}", [str(r) for r in requires])
+                self.set(f"project.optional-dependencies.{key}", deps)
 
     def validate(self):
         def check_exists(attr: str, msg: Optional[str] = None):
