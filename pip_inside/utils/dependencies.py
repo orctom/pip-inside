@@ -174,8 +174,9 @@ class Dependencies:
                 self._cyclic_dendencies.append(f"{' -> '.join(ref_path)} -> {pkg.name} -> {name}")
                 continue
 
-            specs_p, group = self._direct_dependencies.get(name, (None, None))
-            child = Package(name, specs=specs_p or specs_r, group=group, parent=pkg)
+            dep = self._direct_dependencies.get(name)
+            specs, group = (specs_r, None) if dep is None else (dep.specs or specs_r, dep.group)
+            child = Package(name, specs=specs, group=group, parent=pkg)
             pkg.children.append(child)
             self._load_children(child, exclusion, parents)
             if parents is not None:
