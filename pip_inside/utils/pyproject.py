@@ -124,7 +124,10 @@ class PyProject:
                 dependencies[i] = require
 
         if do_add:
-            dependencies.append(require)
+            if dependencies is None:
+                self._dependencies[group] = [require]
+            else:
+                dependencies.append(require)
         return True
 
     def remove_dependency(self, require: Requirement, group: str = 'main'):
