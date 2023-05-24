@@ -36,20 +36,33 @@ pip-inside = "pip_inside.main:cli"
 requires = ["flit_core>=3.8.0,<4"]
 build-backend = "flit_core.buildapi"
 
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = "-ra -q -s"
+testpaths = [
+    "tests",
+]
+
+[tool.autopep8]
+max_line_length = 135
+in-place = true
+recursive = true
+aggressive = 3
+
 [tool.black]
 line-length = 135
-target-version = ["py38"]
-exclude = """
+target-version = ['py38']
+exclude = '''
 /(
-    \\.git
-  | \\.hg
-  | \\.mypy_cache
-  | \\.tox
-  | \\.venv
+    \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
   | _build
   | buck-out
   | build
   | dist
   | data
 )/
-"""
+'''
