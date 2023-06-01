@@ -179,12 +179,12 @@ def show(unused: bool, v: bool):
 
 @cli.command()
 @click.option('-v', 'v', is_flag=True, default=False, help="verbovse")
-def freeze(v: bool):
-    """Freeze dependencies into 'pi.lock'"""
+def lock(v: bool):
+    """Create or update version lock file 'pi.lock'"""
     try:
-        from .commands.freeze import handle_freeze
+        from .commands.lock import handle_lock
         click.secho(f"[python] {shutil.which('python')}", fg='cyan')
-        handle_freeze()
+        handle_lock()
     except Aborted as e:
         click.secho(e, fg='yellow')
     except Exception as e:

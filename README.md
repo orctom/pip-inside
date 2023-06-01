@@ -37,9 +37,9 @@ Options:
 Commands:
   add      Add a package as project dependency
   build    Build the wheel and sdist
-  freeze   Freeze dependencies into 'pi.lock'
   init     Init project in current directory
   install  Install project dependencies by groups
+  lock     Create or update version lock file 'pi.lock'
   publish  Publish the wheel and sdist to remote repository
   remove   Remove a package from project dependencies
   shell    Ensure '.venv' virtualenv, and new shell into it
