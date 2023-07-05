@@ -52,4 +52,4 @@ def _install_group(group: str, dependencies: list):
         cmd = [shutil.which('python'), '-m', 'pip', 'install', *dependencies]
         subprocess.run(cmd, stderr=sys.stderr, stdout=sys.stdout)
     except subprocess.CalledProcessError:
-        pass
+        sys.exit(1)
