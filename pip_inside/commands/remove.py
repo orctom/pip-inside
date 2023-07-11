@@ -1,8 +1,10 @@
+import os
 import shutil
 import subprocess
 import sys
 
 import click
+import InquirerPy
 from pkg_resources import Requirement
 
 from pip_inside.utils.dependencies import Dependencies
@@ -10,6 +12,10 @@ from pip_inside.utils.pyproject import PyProject
 
 
 def handle_remove(name: str, group):
+    if os.environ.get('VIRTUAL_ENV') is None:
+        proceed = InquirerPy.confirm(message='Not in virutal env, sure to proceed?', default=False).execute()
+        if not proceed:
+            return
     try:
         pyproject = PyProject.from_toml()
         require = Requirement(name)
@@ -21,4 +27,4 @@ def handle_remove(name: str, group):
         else:
             click.secho(f"Package: [{require.key}] not found in group: [{group}]", fg='yellow')
     except subprocess.CalledProcessError:
-        pass
+        sys.exit(1)

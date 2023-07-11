@@ -27,4 +27,4 @@ def handle_add(name: str, group: Optional[str]):
         if subprocess.run(cmd, stderr=sys.stderr, stdout=sys.stdout).returncode == 0:
             pyproject.flush()
     except subprocess.CalledProcessError:
-        pass
+        sys.exit(1)
