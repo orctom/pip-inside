@@ -85,8 +85,9 @@ def remove(name, group, v: bool):
 @cli.command()
 @click.option('-G', '--groups', multiple=True, default=['main'], show_default=True, help='dependency groups')
 @click.option('-A', '--all', is_flag=True, default=False, help="all groups")
+@click.option('-q', 'q', is_flag=True, default=False, help="quiet")
 @click.option('-v', 'v', is_flag=True, default=False, help="verbovse")
-def install(groups: List[str], all: bool, v: bool):
+def install(groups: List[str], all: bool, q: bool, v: bool):
     """Install project dependencies by groups"""
     try:
         from .commands.install import handle_install
@@ -97,7 +98,7 @@ def install(groups: List[str], all: bool, v: bool):
             groups = ['main']
         if all:
             groups = ['_all_']
-        handle_install(groups)
+        handle_install(groups, quiet=q)
     except Aborted as e:
         click.secho(e, fg='yellow')
     except Exception as e:

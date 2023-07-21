@@ -5,17 +5,21 @@ import sys
 from typing import List
 
 import click
-import InquirerPy
 import tomlkit
+from InquirerPy import inquirer
 
 from pip_inside.utils.pyproject import PyProject
 
 
-def handle_install(groups: List[str]):
+def handle_install(groups: List[str], quiet: bool = False):
     if os.environ.get('VIRTUAL_ENV') is None:
-        proceed = InquirerPy.confirm(message='Not in virutal env, sure to proceed?', default=False).execute()
-        if not proceed:
-            return
+        msg = 'Not in virutal env, sure to proceed?'
+        if quiet:
+            click.secho(msg, fg='yellow')
+        else:
+            proceed = inquirer.confirm(message=msg, default=False).execute()
+            if not proceed:
+                return
     _install_from_pi_lock(groups) or _install_from_pyproject_toml(groups)
 
 

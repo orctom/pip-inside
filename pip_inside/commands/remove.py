@@ -4,7 +4,7 @@ import subprocess
 import sys
 
 import click
-import InquirerPy
+from InquirerPy import inquirer
 from pkg_resources import Requirement
 
 from pip_inside.utils.dependencies import Dependencies
@@ -13,7 +13,7 @@ from pip_inside.utils.pyproject import PyProject
 
 def handle_remove(name: str, group):
     if os.environ.get('VIRTUAL_ENV') is None:
-        proceed = InquirerPy.confirm(message='Not in virutal env, sure to proceed?', default=False).execute()
+        proceed = inquirer.confirm(message='Not in virutal env, sure to proceed?', default=False).execute()
         if not proceed:
             return
     try:

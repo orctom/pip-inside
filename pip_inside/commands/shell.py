@@ -37,11 +37,14 @@ def _spaw_new_shell(is_1st_time: bool):
     shell = os.environ.get("SHELL")
     terminal = shutil.get_terminal_size()
     p = pexpect.spawn(shell, ['-i'], dimensions=(terminal.lines, terminal.columns))
-    if shell.endswith('/zsh'):
-        p.setecho(False)
-    if (conda_env := _find_conda_env()) is not None:
-        p.sendline(f"conda activate {conda_env}")
-    p.sendline('source .venv/bin/activate')
+    if shell is None:
+        p.sendline('. .venv/bin/activate')
+    else:
+        if shell.endswith('/zsh'):
+            p.setecho(False)
+        if (conda_env := _find_conda_env()) is not None:
+            p.sendline(f"conda activate {conda_env}")
+        p.sendline('source .venv/bin/activate')
     if is_1st_time:
         p.sendline('pip install -U pip')
     signal.signal(signal.SIGWINCH, resize)
