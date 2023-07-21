@@ -13,11 +13,10 @@ from pip_inside.utils.pyproject import PyProject
 
 def handle_install(groups: List[str], quiet: bool = False):
     if os.environ.get('VIRTUAL_ENV') is None:
-        msg = 'Not in virutal env, sure to proceed?'
         if quiet:
-            click.secho(msg, fg='yellow')
+            click.secho('Not in virutal env!', fg='yellow')
         else:
-            proceed = inquirer.confirm(message=msg, default=False).execute()
+            proceed = inquirer.confirm(message='Not in virutal env, sure to proceed?', default=False).execute()
             if not proceed:
                 return
     _install_from_pi_lock(groups) or _install_from_pyproject_toml(groups)
