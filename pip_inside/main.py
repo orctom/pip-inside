@@ -20,7 +20,7 @@ def cli(ctx, version: bool):
 
 
 @cli.command()
-@click.option('-v', 'v', is_flag=True, default=False, help="verbovse")
+@click.option('-v', 'v', is_flag=True, default=False, help="verbose")
 def init(v: bool):
     """Init project in current directory"""
     try:
@@ -38,7 +38,7 @@ def init(v: bool):
 @cli.command()
 @click.argument('name', required=False, type=str)
 @click.option('-G', '--group', default='main', help='dependency group')
-@click.option('-v', 'v', is_flag=True, default=False, help="verbovse")
+@click.option('-v', 'v', is_flag=True, default=False, help="verbose")
 def add(name, group, v: bool):
     """Add a package as project dependency"""
     try:
@@ -64,7 +64,7 @@ def add(name, group, v: bool):
 @cli.command()
 @click.argument('name', required=False, type=str)
 @click.option('-G', '--group', default='main', show_default=True, help='dependency group')
-@click.option('-v', 'v', is_flag=True, default=False, help="verbovse")
+@click.option('-v', 'v', is_flag=True, default=False, help="verbose")
 def remove(name, group, v: bool):
     """Remove a package from project dependencies"""
     try:
@@ -86,7 +86,7 @@ def remove(name, group, v: bool):
 @click.option('-G', '--groups', multiple=True, default=['main'], show_default=True, help='dependency groups')
 @click.option('-A', '--all', is_flag=True, default=False, help="all groups")
 @click.option('-q', 'q', is_flag=True, default=False, help="quiet")
-@click.option('-v', 'v', is_flag=True, default=False, help="verbovse")
+@click.option('-v', 'v', is_flag=True, default=False, help="verbose")
 def install(groups: List[str], all: bool, q: bool, v: bool):
     """Install project dependencies by groups"""
     try:
@@ -110,7 +110,7 @@ def install(groups: List[str], all: bool, q: bool, v: bool):
 
 @cli.command()
 @click.option('--dist', default='dist', show_default=True, help='build target directory')
-@click.option('-v', 'v', is_flag=True, default=False, help="verbovse")
+@click.option('-v', 'v', is_flag=True, default=False, help="verbose")
 def build(dist: str, v: bool):
     """Build the wheel and sdist"""
     try:
@@ -129,7 +129,7 @@ def build(dist: str, v: bool):
 @click.option('-r', '--repository', default='pypi', show_default=True, help='target repository')
 @click.option('--dist', default='dist', show_default=True, help='build target directory')
 @click.option('-i', 'interactive', is_flag=True, default=False, help="interactive mode")
-@click.option('-v', 'v', is_flag=True, default=False, help="verbovse")
+@click.option('-v', 'v', is_flag=True, default=False, help="verbose")
 def publish(repository: str, dist: str, interactive: bool, v: bool):
     """Publish the wheel and sdist to remote repository"""
     try:
@@ -145,7 +145,7 @@ def publish(repository: str, dist: str, interactive: bool, v: bool):
 
 
 @cli.command()
-@click.option('-v', 'v', is_flag=True, default=False, help="verbovse")
+@click.option('-v', 'v', is_flag=True, default=False, help="verbose")
 def shell(v: bool):
     """Ensure '.venv' virtualenv, and new shell into it"""
     try:
@@ -162,7 +162,7 @@ def shell(v: bool):
 
 @cli.command()
 @click.option('--unused', is_flag=True, default=False, help="only show unused dependencies")
-@click.option('-v', 'v', is_flag=True, default=False, help="verbovse")
+@click.option('-v', 'v', is_flag=True, default=False, help="verbose")
 def show(unused: bool, v: bool):
     """Show dependency tree"""
     try:
@@ -179,7 +179,7 @@ def show(unused: bool, v: bool):
 
 
 @cli.command()
-@click.option('-v', 'v', is_flag=True, default=False, help="verbovse")
+@click.option('-v', 'v', is_flag=True, default=False, help="verbose")
 def lock(v: bool):
     """Create or update version lock file 'pi.lock'"""
     try:
@@ -197,12 +197,16 @@ def lock(v: bool):
 
 @cli.command()
 @click.option('-s', '--short', is_flag=True, default=False, help="show short version")
-@click.option('-v', 'v', is_flag=True, default=False, help="verbovse")
-def version(short: bool, v: bool):
+@click.option('-v', 'v', is_flag=True, default=False, help="verbose")
+@click.argument('version', required=False)
+def version(short: bool, v: bool, version: str):
     """Show version of current project"""
     try:
-        from .commands.version import handle_version
-        handle_version(short)
+        from .commands.version import handle_update_version, handle_version
+        if version is None:
+            handle_version(short)
+        else:
+            handle_update_version(version)
     except Aborted as e:
         click.secho(e, fg='yellow')
     except Exception as e:
