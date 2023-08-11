@@ -216,5 +216,20 @@ def version(short: bool, v: bool, version: str):
             click.secho(traceback.format_exc(), fg='red')
 
 
+@cli.command()
+def upgrade():
+    """Upgrade pip-inside and pip as well"""
+    try:
+        from .commands.upgrade import handle_upgrade
+        handle_upgrade()
+    except Aborted as e:
+        click.secho(e, fg='yellow')
+    except Exception as e:
+        click.secho(e, fg='red')
+        if v:
+            import traceback
+            click.secho(traceback.format_exc(), fg='red')
+
+
 if __name__ == "__main__":
     cli()
