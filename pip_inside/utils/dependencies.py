@@ -1,7 +1,9 @@
 import collections
 import os
+import re
 import shutil
 import site
+from importlib.metadata import metadata
 from pathlib import Path
 from typing import Dict, List, Optional, Set
 
@@ -74,11 +76,13 @@ class Package:
                  name: str,
                  *,
                  specs: str = None,
+                 extras: str = None,
                  group: str = None,
                  version: str = None,
                  parent: 'Package' = None) -> None:
         self.name = name
         self.specs = specs
+        self.extras = extras
         self.group = group
         self.version = version
         self.parent: 'Package' = parent
@@ -94,9 +98,12 @@ class Package:
         return paths
 
     def echo(self):
-        name = click.style(self.name, fg=get_name_fg_by_group(self.group))
+        name = click.style(self.name_with_extras, fg=get_name_fg_by_group(self.group))
+        required = f"required: {self.specs or '*'}"
         installed = f"installed: {self.version}" if self.version else click.style('[not installed]', fg='yellow')
-        click.echo(f"{name} [required: {self.specs or '*'}, {installed}]")
+        group = f"group: {click.style(self.group, fg=COLOR_OPTIONAL)}" if self.group not in (None, 'main') else None
+        options = filter(None, (required, installed, group))
+        click.echo(f"{name} [{', '.join(options)}]")
 
     def tree_list(self, skip='│', branch='├', last='└', hyphen='─', prefix='') -> str:
         n_children = len(self.children)
@@ -111,11 +118,15 @@ class Package:
             yield TreeEntry(prefix=f"{prefix}{fork}{hyphen}{hyphen}", package=child)
             yield from child.tree_list(skip, branch, last, hyphen, next_prefix)
 
+    @property
+    def name_with_extras(self):
+        return f"{self.name}[{''.join(self.extras)}]" if self.extras else self.name
+
     def __str__(self) -> str:
         if self.group:
-            return f"{self.name} [{self.group}] [required: {self.specs or '*'}, installed: {self.version}]"
+            return f"{self.name_with_extras} [{self.group}] [required: {self.specs or '*'}, installed: {self.version}]"
         else:
-            return f"{self.name} [required: {self.specs or '*'}, installed: {self.version}]"
+            return f"{self.name_with_extras} [required: {self.specs or '*'}, installed: {self.version}]"
 
     def __repr__(self) -> str:
         return self.__str__()
@@ -128,12 +139,16 @@ class Dependencies:
         self._cyclic_dendencies = []
         self._root: Package = Package(ROOT)
         self._root_non_dep: Package = Package(ROOT)
-        self._direct_dependencies = {
-            r.key: Package(r.key, specs=str(r.specifier), group=group, parent=self._root)
-            for r, group in self._pyproject.get_dependencies_with_group().items()
-        }
+        self._direct_dependencies = {}
 
     def load_dependencies(self):
+        def load_direct_dependencies():
+            self._direct_dependencies.clear()
+            for r, group in self._pyproject.get_dependencies_with_group().items():
+                pkg = Package(r.key, extras=r.extras, specs=str(r.specifier), group=group, parent=self._root)
+                self._direct_dependencies[r.key] = pkg
+
+        load_direct_dependencies()
         self._root.children.clear()
         for child in self._direct_dependencies.values():
             self._root.children.append(child)
@@ -161,26 +176,51 @@ class Dependencies:
         return self
 
     def _load_children(self, pkg: Package, exclusion: Optional[Set[str]] = None, parents: Optional[Dict[str, Set[str]]] = None):
+        def get_children():
+            for r in dist.requires():
+                name, specs_r = norm_name(r.name), str(r.specifier)
+                if exclusion is not None and name in exclusion:
+                    continue
+                ref_path = pkg.get_ref_path()
+                if name in ref_path:
+                    self._cyclic_dendencies.append(f"{' -> '.join(ref_path)} -> {pkg.name} -> {name}")
+                    continue
+
+                dep = self._direct_dependencies.get(name)
+                specs, group = (specs_r, None) if dep is None else (dep.specs or specs_r, dep.group)
+                child = Package(name, specs=specs, group=group, parent=pkg)
+                pkg.children.append(child)
+                if parents is not None:
+                    parents[name].add(pkg.name)
+                self._load_children(child, exclusion, parents)
+
+        def get_extras():
+            extras = pkg.extras
+            required_dists = metadata(dist.key).get_all("Requires-Dist")
+            if extras is None or len(extras) == 0 or required_dists is None:
+                return
+
+            for extra in extras:
+                p = re.compile(rf"\s*;\s*extra\s*==\s*['\"]{extra}['\"]\s*$")
+                for required_dist in required_dists:
+                    name = p.sub('', required_dist)
+                    if name == required_dist:
+                        continue
+                    r = Requirement(name)
+                    dep = self._direct_dependencies.get(r.name)
+                    specs, group = (r.specs, None) if dep is None else (dep.specs or r.specs, dep.group)
+                    child = Package(name, specs=specs, group=group, parent=pkg)
+                    pkg.children.append(child)
+                    if parents is not None:
+                        parents[name].add(pkg.name)
+                    self._load_children(child, exclusion, parents)
+
         dist = self._distributions.get(pkg.name)
         if dist is None:
             return
         pkg.version = dist.version
-        for r in dist.requires():
-            name, specs_r = norm_name(r.name), str(r.specifier)
-            if exclusion is not None and name in exclusion:
-                continue
-            ref_path = pkg.get_ref_path()
-            if name in ref_path:
-                self._cyclic_dendencies.append(f"{' -> '.join(ref_path)} -> {pkg.name} -> {name}")
-                continue
-
-            dep = self._direct_dependencies.get(name)
-            specs, group = (specs_r, None) if dep is None else (dep.specs or specs_r, dep.group)
-            child = Package(name, specs=specs, group=group, parent=pkg)
-            pkg.children.append(child)
-            self._load_children(child, exclusion, parents)
-            if parents is not None:
-                parents[name].add(pkg.name)
+        get_children()
+        get_extras()
 
     def _get_all_project_dependencies(self, exclusions: Optional[List[str]] = None) -> List[str]:
         def pkg_deps(pkg: Package):
