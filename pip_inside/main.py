@@ -217,7 +217,8 @@ def version(short: bool, v: bool, version: str):
 
 
 @cli.command()
-def upgrade():
+@click.option('-v', 'v', is_flag=True, default=False, help="verbose")
+def upgrade(v: bool):
     """Upgrade pip-inside and pip as well"""
     try:
         from .commands.upgrade import handle_upgrade
