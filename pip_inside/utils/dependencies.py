@@ -1,9 +1,7 @@
 import collections
 import os
-import re
 import shutil
 import site
-from importlib.metadata import metadata
 from pathlib import Path
 from typing import Dict, List, Optional, Set
 
@@ -65,9 +63,7 @@ class TreeEntry:
         return f"{self.prefix} {self.package}"
 
     def echo(self):
-        name = click.style(self.package.name, fg=get_name_fg_by_group(self.package.group))
-        installed = f"installed: {self.package.version}" if self.package.version else click.style('[not installed]', fg='yellow')
-        click.echo(f"{self.prefix} {name} [required: {self.package.specs or '*'}, {installed}]")
+        self.package.echo(self.prefix)
 
 
 class Package:
@@ -97,8 +93,9 @@ class Package:
         paths.reverse()
         return paths
 
-    def echo(self):
+    def echo(self, prefix: Optional[str] = None):
         name = click.style(self.name_with_extras, fg=get_name_fg_by_group(self.group))
+        name = f"{prefix} {name}" if prefix else name
         required = f"required: {self.specs or '*'}"
         installed = f"installed: {self.version}" if self.version else click.style('[not installed]', fg='yellow')
         group = f"group: {click.style(self.group, fg=COLOR_OPTIONAL)}" if self.group not in (None, 'main') else None
@@ -196,23 +193,18 @@ class Dependencies:
 
         def get_extras():
             extras = pkg.extras
-            required_dists = metadata(dist.key).get_all("Requires-Dist")
-            if extras is None or len(extras) == 0 or required_dists is None:
+            dist._dep_map.get(extras)
+            if extras is None or len(extras) == 0 or len(dist._dep_map) == 0:
                 return
 
             for extra in extras:
-                p = re.compile(rf"\s*;\s*extra\s*==\s*['\"]{extra}['\"]\s*$")
-                for required_dist in required_dists:
-                    name = p.sub('', required_dist)
-                    if name == required_dist:
-                        continue
-                    r = Requirement(name)
+                for r in dist._dep_map.get(extra, []):
                     dep = self._direct_dependencies.get(r.name)
                     specs, group = (r.specs, None) if dep is None else (dep.specs or r.specs, dep.group)
-                    child = Package(name, specs=specs, group=group, parent=pkg)
+                    child = Package(r.key, specs=specs, group=group, parent=pkg)
                     pkg.children.append(child)
                     if parents is not None:
-                        parents[name].add(pkg.name)
+                        parents[r.key].add(pkg.name)
                     self._load_children(child, exclusion, parents)
 
         dist = self._distributions.get(pkg.name)
