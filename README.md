@@ -1,13 +1,13 @@
 # pip-inside
 
-Like [poetry](https://python-poetry.org/), but uses `pip` to maintain dependencies.
+Like [poetry](https://python-poetry.org/), but using `pip` to maintain dependencies.
 
-Uses `flit-core` as the `build-backend`.
+Using `flit-core` as the `build-backend`.
 
 
 **CONVENSIONS**:
 
- - dynamic `version` (`__version__ = 'your version'` in {root_module}/__init__.py)
+ - dynamic `version` (`__version__ = 'your version'` in `{root_module}/__init__.py`)
  - non-dynamic `description` (in `pyproject.toml`)
  - no `src` folder in project root
  - virtualenv folder named `.venv` in project root
@@ -44,5 +44,6 @@ Commands:
   remove   Remove a package from project dependencies
   shell    Ensure '.venv' virtualenv, and new shell into it
   show     Show dependency tree
+  upgrade  Upgrade pip-inside and pip as well
   version  Show version of current project
 ```
