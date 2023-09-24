@@ -37,6 +37,23 @@ def init(v: bool):
 
 @cli.command()
 @click.argument('name', required=False, type=str)
+@click.option('-v', 'v', is_flag=True, default=False, help="verbose")
+def search(name, v: bool):
+    """Search a package from remote pypi"""
+    try:
+        from .utils.packages import prompt_searches
+        prompt_searches(name)
+    except Aborted as e:
+        click.secho(e, fg='yellow')
+    except Exception as e:
+        click.secho(e, fg='red')
+        if v:
+            import traceback
+            click.secho(traceback.format_exc(), fg='red')
+
+
+@cli.command()
+@click.argument('name', required=False, type=str)
 @click.option('-G', '--group', default='main', help='dependency group')
 @click.option('-v', 'v', is_flag=True, default=False, help="verbose")
 def add(name, group, v: bool):

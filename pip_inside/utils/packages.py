@@ -3,7 +3,7 @@ import re
 import shutil
 import subprocess
 from datetime import datetime
-from typing import Union
+from typing import Optional, Union
 
 import click
 import requests
@@ -30,8 +30,48 @@ P_DESCRIPTION = re.compile(r".*<p class=\"package-snippet__description\">(.+)</p
 P_INDEX_VERSIONS = re.compile('(?<=Available versions:)([a-zA-Z0-9., ]+)')
 
 
-def prompt_a_package(again: bool = False):
-    prompt = 'Add aother package (leave blank to exit):' if again else 'Add a package (leave blank to exit):'
+def prompt_searches(name: Optional[str] = None):
+    continued = False
+    while True:
+        try:
+            if name is None:
+                prompt = 'Search aother package (leave blank to exit):' if continued else 'Search a package (leave blank to exit):'
+                name = inquirer.text(message=prompt).execute()
+                if not name:
+                    return
+
+            with spinner.Spinner(f"Searching for {name}"):
+                pkgs = search(name)
+            name = inquirer.select(
+                message="Select the package:",
+                choices=[Choice(value=pkg.name, name=pkg.desc) for pkg in pkgs],
+                vi_mode=True,
+                wrap_lines=True,
+                mandatory=True,
+            ).execute()
+
+            pkg_info = None
+            trying, max_tries = 0, 3
+            while not pkg_info:
+                trying += 1
+                msg = f"Fetching package info for {name}" if trying == 1 else f"Fetching package info for {name} ({trying} of {max_tries})"
+                with spinner.Spinner(msg):
+                    pkg_info = meta_from_pypi(name)
+                    if pkg_info:
+                        break
+            if not pkg_info:
+                click.secho('Failed to fetch version list', fg='cyan')
+                return
+            description = pkg_info.get('info').get('description')
+            click.secho(description, fg='cyan')
+
+        finally:
+            continued = True
+            name = None
+
+
+def prompt_a_package(continued: bool = False):
+    prompt = 'Add aother package (leave blank to exit):' if continued else 'Add a package (leave blank to exit):'
     name = inquirer.text(message=prompt).execute()
     if not name:
         return
@@ -120,12 +160,24 @@ def versions_by_pip_index(name: str):
 
 def versions_by_json(name: str):
     try:
-        url = f"https://pypi.org//pypi/{name}/json"
-        data = requests.get(url).json()
-        if data is None or len(data) < 10:
+        data = meta_from_pypi(name)
+        if not data:
             return None
         versions = list(data.get('releases').keys())
         versions.reverse()
         return versions
     except Exception:
+        return None
+
+
+def meta_from_pypi(name: str):
+    try:
+        headers = {'Accept': 'application/json'}
+        r = requests.get(f"https://pypi.org/pypi/{name}/json", headers=headers)
+        r.raise_for_status()
+        if r.text is None or len(r.text) < 10:
+            return None
+        return r.json()
+    except Exception as e:
+        click.secho(f"Failed to fetch pckage info, due to: {e}", fg='yellow')
         return None
