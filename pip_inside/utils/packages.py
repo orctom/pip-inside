@@ -65,7 +65,7 @@ def prompt_searches(name: Optional[str] = None):
             info = pkg_info.get('info')
             releases = pkg_info.get('releases')
             releases_recent = '\n'.join([
-                f" - {version} ({misc.formatted_date(dists[0].get('upload_time'), '%Y-%m-%d')})"
+                f" - {version} ({misc.formatted_date(dists[0].get('upload_time'), DATE_FORMAT)})"
                 for version, dists in list(sorted(releases.items(), key=lambda d: d[1][0].get('upload_time'), reverse=True))[:10]
             ])
             colored = lambda text, color='blue': click.style(text, fg=color)
