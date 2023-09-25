@@ -1,5 +1,6 @@
 import os
 import re
+from datetime import datetime
 
 P_HAS_VERSION_SPECIFIERS = re.compile('(?:===|~=|==|!=|<=|>=|<|>)')
 URL_VERSION_SPECIFIERS = 'https://peps.python.org/pep-0440/#version-specifiers'
@@ -35,3 +36,10 @@ def is_in_docker():
         return False
 
     return has_docker_env() or has_docker_cgroup()
+
+
+def formatted_date(date_str, fmt='%Y-%m-%d %H:%M:%S'):
+    try:
+        return datetime.fromisoformat(date_str).strftime(fmt)
+    except:
+        return date_str

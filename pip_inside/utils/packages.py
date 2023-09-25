@@ -62,9 +62,20 @@ def prompt_searches(name: Optional[str] = None):
             if not pkg_info:
                 click.secho('Failed to fetch version list', fg='cyan')
                 return
-            description = pkg_info.get('info').get('description')
-            click.secho(description, fg='cyan')
-
+            info = pkg_info.get('info')
+            releases = pkg_info.get('releases')
+            releases_recent = '\n'.join([
+                f" - {version} ({misc.formatted_date(dists[0].get('upload_time'), '%Y-%m-%d')})"
+                for version, dists in list(sorted(releases.items(), key=lambda d: d[1][0].get('upload_time'), reverse=True))[:10]
+            ])
+            colored = lambda text, color='blue': click.style(text, fg=color)
+            pkg_descriptions = (
+                f"{colored('Summary')}    : {info.get('summary')}\n"
+                f"{colored('Home')}       : {info.get('home_page')}\n"
+                f"{colored('Description')}:\n{info.get('description')}\n"
+                f"{colored('Releases (latest 10)')}:\n{releases_recent}"
+            )
+            click.echo_via_pager(pkg_descriptions)
         finally:
             continued = True
             name = None
