@@ -65,15 +65,19 @@ def prompt_searches(name: Optional[str] = None):
             info = pkg_info.get('info')
             releases = pkg_info.get('releases')
             releases_recent = '\n'.join([
-                f" - {version} ({misc.formatted_date(dists[0].get('upload_time'), DATE_FORMAT)})"
-                for version, dists in list(sorted(releases.items(), key=lambda d: d[1][0].get('upload_time'), reverse=True))[:10]
+                f" - {version: <10} ({misc.formatted_date(dists[0].get('upload_time'), DATE_FORMAT)})"
+                for version, dists in list(sorted(releases.items(), key=lambda d: d[1][0].get('upload_time'), reverse=True))[:15]
+                if not dists[0].get('yanked')
             ])
+            deps = '\n'.join([f" - {dep}" for dep in info.get('requires_dist') if 'extra' not in dep])
             colored = lambda text, color='blue': click.style(text, fg=color)
             pkg_descriptions = (
-                f"{colored('Summary')}    : {info.get('summary')}\n"
-                f"{colored('Home')}       : {info.get('home_page')}\n"
-                f"{colored('Description')}:\n{info.get('description')}\n"
-                f"{colored('Releases (latest 10)')}:\n{releases_recent}"
+                f"{colored('Summary')}        : {info.get('summary')}\n"
+                f"{colored('Home')}           : {info.get('home_page')}\n"
+                f"{colored('Python Version')} : {info.get('requires_python')}\n"
+                f"{colored('Dependencies')}   :\n{deps}\n\n"
+                f"{colored('Releases (15)')}  :\n{releases_recent}\n\n"
+                f"{colored('Description')}    :\n{info.get('description')}\n"
             )
             click.echo_via_pager(pkg_descriptions)
         finally:
@@ -153,7 +157,7 @@ def search(name: str):
 
 
 def fetch_versions(name: str):
-    return versions_by_pip_index(name) or versions_by_json(name)
+    return versions_by_pip_index(name) or versions_from_pypi(name)
 
 
 def versions_by_pip_index(name: str):
@@ -169,14 +173,17 @@ def versions_by_pip_index(name: str):
         return None
 
 
-def versions_by_json(name: str):
+def versions_from_pypi(name: str):
     try:
         data = meta_from_pypi(name)
         if not data:
             return None
-        versions = list(data.get('releases').keys())
-        versions.reverse()
-        return versions
+        releases = data.get('releases')
+        return [
+            version
+            for version, dists in list(sorted(releases.items(), key=lambda d: d[1][0].get('upload_time'), reverse=True))
+            if not dists[0].get('yanked')
+        ]
     except Exception:
         return None
 
