@@ -68,11 +68,12 @@ def prompt_searches(name: Optional[str] = None):
                 f" - {version: <10} ({misc.formatted_date(dist.get('upload_time'), DATE_FORMAT)})"
                 for version, dist in list(sorted(releases.items(), key=lambda d: d[1].get('upload_time'), reverse=True))[:15]
             ])
-            deps = '\n'.join([f" - {dep}" for dep in info.get('requires_dist') if 'extra' not in dep])
+            url = info.get('home_page') or (info.get('project_urls') or {}).get('Homepage') or ''
+            deps = '\n'.join([f" - {dep}" for dep in info.get('requires_dist') or [] if 'extra' not in dep])
             colored = lambda text, color='blue': click.style(text, fg=color)
             pkg_descriptions = (
                 f"{colored('Summary')}        : {info.get('summary')}\n"
-                f"{colored('URL')}            : {info.get('home_page') or info.get('project_urls', {}).get('Homepage')}\n"
+                f"{colored('URL')}            : {url}\n"
                 f"{colored('Python Version')} : {info.get('requires_python')}\n"
                 f"{colored('Dependencies')}   :\n{deps}\n\n"
                 f"{colored('Releases (15)')}  :\n{releases_recent}\n\n"
@@ -131,9 +132,9 @@ def check_version(package_name: str) -> Union[str, bool]:
 
 def search(name: str, retries: int = 3):
     url = API_URL.format(query=name)
-    for _ in range(retries):
+    for i in range(retries):
         try:
-            r = requests.get(url, timeout=10)
+            r = requests.get(url, timeout=(2, .5))
             r.raise_for_status()
             page_data = r.text
             names = P_NAME.findall(page_data)
@@ -158,11 +159,10 @@ def search(name: str, retries: int = 3):
                 for name, version, release, desc in zip(names, versions, releases, descriptions)
             ]
         except requests.exceptions.Timeout:
-            click.secho(f"Timeout searching {name}", fg='yellow')
+            click.secho(f"\b▒ ", nl=False, fg='yellow')
             continue
-
         except Exception as e:
-            click.secho(f"Failed to search {name}, due to: {e}", fg='yellow')
+            click.secho(f"\b█ ", nl=False, fg='yellow')
             continue
 
 
@@ -200,17 +200,17 @@ def versions_from_pypi(name: str):
 def meta_from_pypi(name: str, retries: int = 3):
     url = f"https://pypi.org/pypi/{name}/json"
     headers = {'Accept': 'application/json'}
-    for _ in range(retries):
+    for i in range(retries):
         try:
-            r = requests.get(url, headers=headers, timeout=10)
+            r = requests.get(url, headers=headers, timeout=(2, .5))
             r.raise_for_status()
             if r.text is None or len(r.text) < 10:
                 return None
             return r.json()
         except requests.exceptions.Timeout:
-            click.secho(f"Timeout fetching info for {name}", fg='yellow')
+            click.secho(f"\b▒ ", nl=False, fg='yellow')
             continue
         except Exception as e:
-            click.secho(f"Failed to fetch pckage info, due to: {e}", fg='yellow')
+            click.secho(f"\b█ ", nl=False, fg='yellow')
             continue
     return None
