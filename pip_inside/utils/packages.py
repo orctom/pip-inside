@@ -63,17 +63,16 @@ def prompt_searches(name: Optional[str] = None):
                 click.secho('Failed to fetch version list', fg='cyan')
                 return
             info = pkg_info.get('info')
-            releases = pkg_info.get('releases')
+            releases = {version: dists[0] for version, dists in pkg_info.get('releases').items() if dists and not dists[0].get('yanked')}
             releases_recent = '\n'.join([
-                f" - {version: <10} ({misc.formatted_date(dists[0].get('upload_time'), DATE_FORMAT)})"
-                for version, dists in list(sorted(releases.items(), key=lambda d: d[1][0].get('upload_time'), reverse=True))[:15]
-                if not dists[0].get('yanked')
+                f" - {version: <10} ({misc.formatted_date(dist.get('upload_time'), DATE_FORMAT)})"
+                for version, dist in list(sorted(releases.items(), key=lambda d: d[1].get('upload_time'), reverse=True))[:15]
             ])
             deps = '\n'.join([f" - {dep}" for dep in info.get('requires_dist') if 'extra' not in dep])
             colored = lambda text, color='blue': click.style(text, fg=color)
             pkg_descriptions = (
                 f"{colored('Summary')}        : {info.get('summary')}\n"
-                f"{colored('Home')}           : {info.get('home_page')}\n"
+                f"{colored('URL')}            : {info.get('home_page') or info.get('project_urls', {}).get('Homepage')}\n"
                 f"{colored('Python Version')} : {info.get('requires_python')}\n"
                 f"{colored('Dependencies')}   :\n{deps}\n\n"
                 f"{colored('Releases (15)')}  :\n{releases_recent}\n\n"
@@ -130,30 +129,41 @@ def check_version(package_name: str) -> Union[str, bool]:
         return installed.version
 
 
-def search(name: str):
+def search(name: str, retries: int = 3):
     url = API_URL.format(query=name)
-    page_data = requests.get(url=url).text
-    names = P_NAME.findall(page_data)
-    versions = P_VERSION.findall(page_data)
-    releases = P_RELEASE.findall(page_data)
-    descriptions = P_DESCRIPTION.findall(page_data)
-    releases = [
-        datetime.strptime(release, "%Y-%m-%dT%H:%M:%S%z").strftime(DATE_FORMAT)
-        for release in releases
-    ]
+    for _ in range(retries):
+        try:
+            r = requests.get(url, timeout=10)
+            r.raise_for_status()
+            page_data = r.text
+            names = P_NAME.findall(page_data)
+            versions = P_VERSION.findall(page_data)
+            releases = P_RELEASE.findall(page_data)
+            descriptions = P_DESCRIPTION.findall(page_data)
+            releases = [
+                datetime.strptime(release, "%Y-%m-%dT%H:%M:%S%z").strftime(DATE_FORMAT)
+                for release in releases
+            ]
 
-    n_n = max(map(len, names)) + 1
-    n_v = max(map(len, versions)) + 1
-    n_r = max(map(len, releases)) + 1
-    n_d = max(map(len, descriptions)) + 1
+            n_n = max(map(len, names)) + 1
+            n_v = max(map(len, versions)) + 1
+            n_r = max(map(len, releases)) + 1
+            n_d = max(map(len, descriptions)) + 1
 
-    fmt = lambda n, v, r, d: f"{n: <{n_n}} {v: <{n_v}} {r: <{n_r}} {d: <{n_d}}"
-    pkg = collections.namedtuple('pkg', ['name', 'desc'])
+            fmt = lambda n, v, r, d: f"{n: <{n_n}} {v: <{n_v}} {r: <{n_r}} {d: <{n_d}}"
+            pkg = collections.namedtuple('pkg', ['name', 'desc'])
 
-    return [
-        pkg(name, fmt(name, version, release, desc))
-        for name, version, release, desc in zip(names, versions, releases, descriptions)
-    ]
+            return [
+                pkg(name, fmt(name, version, release, desc))
+                for name, version, release, desc in zip(names, versions, releases, descriptions)
+            ]
+        except requests.exceptions.Timeout:
+            click.secho(f"Timeout searching {name}", fg='yellow')
+            continue
+
+        except Exception as e:
+            click.secho(f"Failed to search {name}, due to: {e}", fg='yellow')
+            continue
 
 
 def fetch_versions(name: str):
@@ -175,27 +185,32 @@ def versions_by_pip_install(name: str):
 
 def versions_from_pypi(name: str):
     try:
-        data = meta_from_pypi(name)
-        if not data:
+        pkg_info = meta_from_pypi(name)
+        if not pkg_info:
             return None
-        releases = data.get('releases')
+        releases = {version: dists[0] for version, dists in pkg_info.get('releases').items() if dists and not dists[0].get('yanked')}
         return [
             version
-            for version, dists in list(sorted(releases.items(), key=lambda d: d[1][0].get('upload_time'), reverse=True))
-            if not dists[0].get('yanked')
+            for version, _ in list(sorted(releases.items(), key=lambda d: d[1].get('upload_time'), reverse=True))
         ]
     except Exception:
         return None
 
 
-def meta_from_pypi(name: str):
-    try:
-        headers = {'Accept': 'application/json'}
-        r = requests.get(f"https://pypi.org/pypi/{name}/json", headers=headers)
-        r.raise_for_status()
-        if r.text is None or len(r.text) < 10:
-            return None
-        return r.json()
-    except Exception as e:
-        click.secho(f"Failed to fetch pckage info, due to: {e}", fg='yellow')
-        return None
+def meta_from_pypi(name: str, retries: int = 3):
+    url = f"https://pypi.org/pypi/{name}/json"
+    headers = {'Accept': 'application/json'}
+    for _ in range(retries):
+        try:
+            r = requests.get(url, headers=headers, timeout=10)
+            r.raise_for_status()
+            if r.text is None or len(r.text) < 10:
+                return None
+            return r.json()
+        except requests.exceptions.Timeout:
+            click.secho(f"Timeout fetching info for {name}", fg='yellow')
+            continue
+        except Exception as e:
+            click.secho(f"Failed to fetch pckage info, due to: {e}", fg='yellow')
+            continue
+    return None
