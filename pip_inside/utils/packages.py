@@ -27,7 +27,7 @@ P_VERSION = re.compile(r".*<span class=\"package-snippet__version\">(.+)</span>"
 P_RELEASE = re.compile(r"<time\s+datetime=\"([^\"]+)\"")
 P_DESCRIPTION = re.compile(r".*<p class=\"package-snippet__description\">(.+)</p>")
 
-P_INDEX_VERSIONS = re.compile('(?<=Available versions:)([a-zA-Z0-9., ]+)')
+P_VERSIONS_FROM_INSTALL = re.compile('(?<=from versions:)([a-zA-Z0-9., ]+)')
 
 
 def prompt_searches(name: Optional[str] = None):
@@ -157,15 +157,15 @@ def search(name: str):
 
 
 def fetch_versions(name: str):
-    return versions_by_pip_index(name) or versions_from_pypi(name)
+    return versions_by_pip_install(name) or versions_from_pypi(name)
 
 
-def versions_by_pip_index(name: str):
+def versions_by_pip_install(name: str):
     try:
-        cmd = [shutil.which('python'), '-m', 'pip', 'index', 'versions', name]
+        cmd = [shutil.which('python'), '-m', 'pip', 'install', '--use-deprecated=legacy-resolver', f"{name}=="]
         process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        out, _ = process.communicate()
-        m = P_INDEX_VERSIONS.search(out.decode())
+        _, err = process.communicate()
+        m = P_VERSIONS_FROM_INSTALL.search(err.decode())
         if m is None:
             return None
         return [v.strip() for v in m.group().strip().split(',')]
