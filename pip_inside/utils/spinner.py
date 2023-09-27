@@ -40,4 +40,3 @@ class Spinner(threading.Thread):
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.stop()
-        # click.secho('\b\b..', nl=False, fg='bright_cyan')

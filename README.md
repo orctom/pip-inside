@@ -42,6 +42,7 @@ Commands:
   lock     Create or update version lock file 'pi.lock'
   publish  Publish the wheel and sdist to remote repository
   remove   Remove a package from project dependencies
+  search   Search a package from remote pypi
   shell    Ensure '.venv' virtualenv, and new shell into it
   show     Show dependency tree
   upgrade  Upgrade pip-inside and pip as well
