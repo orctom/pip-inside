@@ -158,11 +158,9 @@ def search(name: str, retries: int = 3):
                 pkg(name, fmt(name, version, release, desc))
                 for name, version, release, desc in zip(names, versions, releases, descriptions)
             ]
-        except requests.exceptions.Timeout:
-            click.secho(f"\b▒ ", nl=False, fg='yellow')
-            continue
         except Exception as e:
-            click.secho(f"\b█ ", nl=False, fg='yellow')
+            if i + 1 == retries:
+                raise e
             continue
 
 
@@ -207,10 +205,8 @@ def meta_from_pypi(name: str, retries: int = 3):
             if r.text is None or len(r.text) < 10:
                 return None
             return r.json()
-        except requests.exceptions.Timeout:
-            click.secho(f"\b▒ ", nl=False, fg='yellow')
-            continue
         except Exception as e:
-            click.secho(f"\b█ ", nl=False, fg='yellow')
+            if i + 1 == retries:
+                raise e
             continue
     return None
