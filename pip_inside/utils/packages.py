@@ -42,6 +42,9 @@ def prompt_searches(name: Optional[str] = None):
 
             with spinner.Spinner(f"Searching for {name}"):
                 pkgs = search(name)
+            if pkgs is None:
+                click.secho(f"No packages found by name '{name}'", fg='cyan')
+                continue
             name = inquirer.select(
                 message="Select the package:",
                 choices=[Choice(value=pkg.name, name=pkg.desc) for pkg in pkgs],
@@ -87,38 +90,43 @@ def prompt_searches(name: Optional[str] = None):
 
 def prompt_a_package(continued: bool = False):
     prompt = 'Add aother package (leave blank to exit):' if continued else 'Add a package (leave blank to exit):'
-    name = inquirer.text(message=prompt).execute()
-    if not name:
-        return
+    pkgs = None
+    while pkgs is None:
+        name = inquirer.text(message=prompt).execute()
+        if not name:
+            return
 
-    with spinner.Spinner(f"Searching for {name}"):
-        pkgs = search(name)
-    name = inquirer.select(
-        message="Select the package:",
-        choices=[Choice(value=pkg.name, name=pkg.desc) for pkg in pkgs],
-        vi_mode=True,
-        wrap_lines=True,
-        mandatory=True,
-    ).execute()
-
-    with spinner.Spinner(f"Fetching version list for {name}"):
-        versions = fetch_versions(name)
-    if versions:
-        version = inquirer.fuzzy(
-            message="Select the version:",
-            choices=['[set manually]'] + versions[:15],
+        with spinner.Spinner(f"Searching for {name}"):
+            pkgs = search(name)
+        if pkgs is None:
+            click.secho(f"No packages found by name '{name}'", fg='cyan')
+            continue
+        name = inquirer.select(
+            message="Select the package:",
+            choices=[Choice(value=pkg.name, name=pkg.desc) for pkg in pkgs],
             vi_mode=True,
             wrap_lines=True,
             mandatory=True,
         ).execute()
-        if version == '[set manually]':
-            version = inquirer.text(message="Version:", completer={v: None for v in versions[:15]}).execute().strip()
-    else:
-        click.secho('Failed to fetch version list, please set version menually', fg='cyan')
-        version = inquirer.text(message="Version:").execute().strip()
-    if version:
-        name = f"{name}{version}" if misc.has_ver_spec(version) else f"{name}=={version}"
-    return name
+
+        with spinner.Spinner(f"Fetching version list for {name}"):
+            versions = fetch_versions(name)
+        if versions:
+            version = inquirer.fuzzy(
+                message="Select the version:",
+                choices=['[set manually]'] + versions[:15],
+                vi_mode=True,
+                wrap_lines=True,
+                mandatory=True,
+            ).execute()
+            if version == '[set manually]':
+                version = inquirer.text(message="Version:", completer={v: None for v in versions[:15]}).execute().strip()
+        else:
+            click.secho('Failed to fetch version list, please set version menually', fg='cyan')
+            version = inquirer.text(message="Version:").execute().strip()
+        if version:
+            name = f"{name}{version}" if misc.has_ver_spec(version) else f"{name}=={version}"
+        return name
 
 
 def check_version(package_name: str) -> Union[str, bool]:
@@ -138,6 +146,8 @@ def search(name: str, retries: int = 3):
             r.raise_for_status()
             page_data = r.text
             names = P_NAME.findall(page_data)
+            if len(names) == 0:
+                return None
             versions = P_VERSION.findall(page_data)
             releases = P_RELEASE.findall(page_data)
             descriptions = P_DESCRIPTION.findall(page_data)

@@ -1,4 +1,5 @@
 import threading
+import time
 
 import click
 
@@ -45,3 +46,4 @@ class Spinner(threading.Thread):
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.stop()
+        time.sleep(0.1)
