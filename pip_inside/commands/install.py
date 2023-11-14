@@ -8,13 +8,13 @@ import click
 import tomlkit
 from InquirerPy import inquirer
 
-from pip_inside.utils.misc import is_in_docker
+from pip_inside.utils.misc import is_in_container
 from pip_inside.utils.pyproject import PyProject
 
 
 def handle_install(groups: List[str], quiet: bool = False):
     if os.environ.get('VIRTUAL_ENV') is None:
-        if is_in_docker():
+        if is_in_container():
             click.secho('Using global env in docker.', fg='cyan')
         elif quiet:
             click.secho('Using global env per arg: "-q"', fg='yellow')

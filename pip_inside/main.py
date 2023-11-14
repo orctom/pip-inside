@@ -102,7 +102,7 @@ def remove(name, group, v: bool):
 @cli.command()
 @click.option('-G', '--groups', multiple=True, default=['main'], show_default=True, help='dependency groups')
 @click.option('-A', '--all', is_flag=True, default=False, help="all groups")
-@click.option('-q', 'q', is_flag=True, default=False, help="quiet")
+@click.option('-q', 'q', is_flag=True, default=False, help="bypass confirmation if installing into global env")
 @click.option('-v', 'v', is_flag=True, default=False, help="verbose")
 def install(groups: List[str], all: bool, q: bool, v: bool):
     """Install project dependencies by groups"""
