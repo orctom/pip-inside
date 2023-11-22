@@ -32,6 +32,11 @@ repository = "https://github.com/orctom/pip-inside"
 pi = "pip_inside.main:cli"
 pip-inside = "pip_inside.main:cli"
 
+[project.optional-dependencies]
+dev = [
+    "ruff",
+]
+
 [build-system]
 requires = ["flit_core>=3.8.0,<4"]
 build-backend = "flit_core.buildapi"
@@ -49,20 +54,50 @@ in-place = true
 recursive = true
 aggressive = 3
 
-[tool.black]
+[tool.ruff]
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".git-rewrite",
+    ".hg",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pytype",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "venv",
+    "data",
+    ".vscode",
+    ".ipynb_checkpoints",
+]
+
 line-length = 135
-target-version = ['py38']
-exclude = '''
-/(
-    \.git
-  | \.hg
-  | \.mypy_cache
-  | \.tox
-  | \.venv
-  | _build
-  | buck-out
-  | build
-  | dist
-  | data
-)/
-'''
+
+target-version = "py38"
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F"]
+ignore = []
+
+fixable = ["ALL"]
+unfixable = []
+
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+
