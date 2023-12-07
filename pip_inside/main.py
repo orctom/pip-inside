@@ -39,10 +39,27 @@ def init(v: bool):
 @click.argument('name', required=False, type=str)
 @click.option('-v', 'v', is_flag=True, default=False, help="verbose")
 def search(name, v: bool):
-    """Search a package from remote pypi"""
+    """Search a package from PYPI"""
     try:
         from .utils.packages import prompt_searches
         prompt_searches(name)
+    except Aborted as e:
+        click.secho(e, fg='yellow')
+    except Exception as e:
+        click.secho(e, fg='red')
+        if v:
+            import traceback
+            click.secho(traceback.format_exc(), fg='red')
+
+
+@cli.command()
+@click.argument('name', required=False, type=str)
+@click.option('-v', 'v', is_flag=True, default=False, help="verbose")
+def versions(name, v: bool):
+    """Show recent releases of a package in PYPI"""
+    try:
+        from .utils.packages import show_versions
+        show_versions(name)
     except Aborted as e:
         click.secho(e, fg='yellow')
     except Exception as e:
@@ -178,14 +195,15 @@ def shell(v: bool):
 
 
 @cli.command()
+@click.option('--search', help='search dependency by name')
 @click.option('--unused', is_flag=True, default=False, help="only show unused dependencies")
 @click.option('-v', 'v', is_flag=True, default=False, help="verbose")
-def show(unused: bool, v: bool):
+def deps(search: str, unused: bool, v: bool):
     """Show dependency tree"""
     try:
-        from .commands.show import handle_show
+        from .commands.deps import handle_deps
         click.secho(f"[python] {shutil.which('python')}", fg='cyan')
-        handle_show(unused)
+        handle_deps(unused, search)
     except Aborted as e:
         click.secho(e, fg='yellow')
     except Exception as e:
@@ -217,7 +235,7 @@ def lock(v: bool):
 @click.option('-v', 'v', is_flag=True, default=False, help="verbose")
 @click.argument('version', required=False)
 def version(short: bool, v: bool, version: str):
-    """Show version of current project"""
+    """Show / Change version of current project"""
     try:
         from .commands.version import handle_update_version, handle_version
         if version is None:

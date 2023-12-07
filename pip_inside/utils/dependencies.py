@@ -3,7 +3,7 @@ import os
 import shutil
 import site
 from pathlib import Path
-from typing import Dict, List, Optional, Set
+from typing import Dict, Generator, List, Optional, Set
 
 import click
 from pkg_resources import Distribution, Requirement, find_distributions
@@ -83,6 +83,7 @@ class Package:
         self.version = version
         self.parent: 'Package' = parent
         self.children: List['Package'] = []
+        self._hit: bool = False
 
     def get_ref_path(self) -> List[str]:
         paths = []
@@ -102,9 +103,18 @@ class Package:
         options = filter(None, (required, installed, group))
         click.echo(f"{name} [{', '.join(options)}]")
 
-    def tree_list(self, skip='│', branch='├', last='└', hyphen='─', prefix='') -> str:
-        n_children = len(self.children)
-        for i, child in enumerate(self.children):
+    def _search(self, search: str):
+        if search:
+            if search in self.name:
+                self._hit = True
+            for child in self.children:
+                self._hit = child._search(search) or self._hit
+        return self._hit
+
+    def tree_list(self, skip='│', branch='├', last='└', hyphen='─', prefix='', search: Optional[str] = None) -> Generator[TreeEntry, None, None]:
+        children = [child for child in self.children if child._hit is True] if search else self.children
+        n_children = len(children)
+        for i, child in enumerate(children):
             if i < n_children - 1:
                 next_prefix = ''.join([prefix, skip, '   '])
                 fork = branch
@@ -113,7 +123,7 @@ class Package:
                 fork = last
 
             yield TreeEntry(prefix=f"{prefix}{fork}{hyphen}{hyphen}", package=child)
-            yield from child.tree_list(skip, branch, last, hyphen, next_prefix)
+            yield from child.tree_list(skip, branch, last, hyphen, next_prefix, search=search)
 
     @property
     def name_with_extras(self):
@@ -228,17 +238,17 @@ class Dependencies:
                 dependencies.append(name)
         return dependencies
 
-    def print_dependencies(self):
+    def print_dependencies(self, search: Optional[str] = None):
         if len(self._root.children) == 0:
             self.load_dependencies()
-        self._print_dep_tree(self._root)
+        self._print_dep_tree(self._root, search)
 
-    def print_non_dependencies(self):
+    def print_non_dependencies(self, search: Optional[str] = None):
         if len(self._root_non_dep.children) == 0:
             self.load_non_dependencies()
-        self._print_dep_tree(self._root_non_dep)
+        self._print_dep_tree(self._root_non_dep, search)
 
-    def _print_dep_tree(self, root: Package):
+    def _print_dep_tree(self, root: Package, search: Optional[str] = None):
         if self._cyclic_dendencies:
             click.secho('Cyclic dependencies:', fg='yellow')
             for path in self._cyclic_dendencies:
@@ -248,8 +258,11 @@ class Dependencies:
         key_subs = click.style(COLOR_SUBS, fg=COLOR_SUBS)
         click.secho(f"Dependencies: (main: {key_main}, optional: {key_optional}, sub-dependencies: {key_subs})")
         for child in root.children:
-            child.echo()
-            for entry in child.tree_list():
+            child._search(search)
+            child_entries = list(child.tree_list(search=search))
+            if not search or child._hit or child_entries:
+                child.echo()
+            for entry in child_entries:
                 entry.echo()
 
     def get_unused_dependencies_for(self, require: Requirement) -> List[str]:

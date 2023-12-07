@@ -73,7 +73,6 @@ def prompt_searches(name: Optional[str] = None):
             ])
             url = info.get('home_page') or (info.get('project_urls') or {}).get('Homepage') or ''
             deps = '\n'.join([f" - {dep}" for dep in info.get('requires_dist') or [] if 'extra' not in dep])
-            colored = lambda text, color='blue': click.style(text, fg=color)
             pkg_descriptions = (
                 f"{colored('Summary')}        : {info.get('summary')}\n"
                 f"{colored('URL')}            : {url}\n"
@@ -86,6 +85,21 @@ def prompt_searches(name: Optional[str] = None):
         finally:
             continued = True
             name = None
+
+
+def show_versions(name: str):
+    msg = f"Fetching package info for {name}"
+    with spinner.Spinner(msg):
+        pkg_info = meta_from_pypi(name)
+    if not pkg_info:
+        click.secho('Failed to fetch version list', fg='cyan')
+        return
+    releases = {version: dists[0] for version, dists in pkg_info.get('releases').items() if dists and not dists[0].get('yanked')}
+    releases_recent = '\n'.join([
+        f" - {version: <10} ({misc.formatted_date(dist.get('upload_time'), DATE_FORMAT)})"
+        for version, dist in list(sorted(releases.items(), key=lambda d: d[1].get('upload_time'), reverse=True))[:15]
+    ])
+    click.secho(f"{colored('Releases (15)')}  :\n{releases_recent}\n")
 
 
 def prompt_a_package(continued: bool = False):
@@ -139,6 +153,9 @@ def check_version(package_name: str) -> Union[str, bool]:
 
 
 def search(name: str, retries: int = 3):
+    def fmt(n, v, r, d):
+        return f"{n: <{n_n}} {v: <{n_v}} {r: <{n_r}} {d: <{n_d}}"
+
     url = API_URL.format(query=name)
     for i in range(retries):
         try:
@@ -161,7 +178,6 @@ def search(name: str, retries: int = 3):
             n_r = max(map(len, releases)) + 1
             n_d = max(map(len, descriptions)) + 1
 
-            fmt = lambda n, v, r, d: f"{n: <{n_n}} {v: <{n_v}} {r: <{n_r}} {d: <{n_d}}"
             pkg = collections.namedtuple('pkg', ['name', 'desc'])
 
             return [
@@ -220,3 +236,7 @@ def meta_from_pypi(name: str, retries: int = 3):
                 raise e
             continue
     return None
+
+
+def colored(text, color='blue'):
+    return click.style(text, fg=color)

@@ -15,7 +15,7 @@
             "justMyCode": false
         },
         {
-            "name": "show",
+            "name": "deps",
             "type": "python",
             "request": "launch",
             "program": "-m",
@@ -23,8 +23,9 @@
             "console": "integratedTerminal",
             "args": [
                 "pip_inside.main",
-                "show",
+                "deps",
                 "--unused",
+                "--search=pytz",
                 "-v"
             ],
             "justMyCode": false

@@ -35,16 +35,18 @@ Options:
   --help         Show this message and exit.
 
 Commands:
-  add      Add a package as project dependency
-  build    Build the wheel and sdist
-  init     Init project in current directory
-  install  Install project dependencies by groups
-  lock     Create or update version lock file 'pi.lock'
-  publish  Publish the wheel and sdist to remote repository
-  remove   Remove a package from project dependencies
-  search   Search a package from remote pypi
-  shell    Ensure '.venv' virtualenv, and new shell into it
-  show     Show dependency tree
-  upgrade  Upgrade pip-inside and pip as well
-  version  Show version of current project
+  add       Add a package as project dependency
+  build     Build the wheel and sdist
+  deps      Show dependency tree
+  init      Init project in current directory
+  install   Install project dependencies by groups
+  lock      Create or update version lock file 'pi.lock'
+  publish   Publish the wheel and sdist to remote repository
+  remove    Remove a package from project dependencies
+  search    Search a package from PYPI
+  shell     Ensure '.venv' virtualenv, and new shell into it
+  upgrade   Upgrade pip-inside and pip as well
+  version   Show / Change version of current project
+  versions  Show recent releases of a package in PYPI
+
 ```
