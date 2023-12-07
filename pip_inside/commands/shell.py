@@ -24,7 +24,21 @@ def _create_venv():
         return False
     name = Path(os.getcwd()).name
     venv.create('.venv', with_pip=True, prompt=name)
+    _write_conda_activate_into_activate()
     return True
+
+
+def _write_conda_activate_into_activate():
+    """fix PS1 conda env name"""
+    if (conda_env := _find_conda_env()) is None:
+        return
+    with open('.venv/bin/activate', 'a+') as f:
+        f.seek(0)
+        lines = f.readlines()
+        lines.insert(0, f"conda activate {conda_env}\n")
+        f.truncate(0)
+        for line in lines:
+            f.write(line)
 
 
 def _spaw_new_shell(is_1st_time: bool):
@@ -61,5 +75,5 @@ def _find_conda_env():
             if home is None or 'conda' not in home:
                 return None
             return home[:-4] if home.endswith('/bin') else home
-    except Exception as e:
+    except Exception:
         return None
