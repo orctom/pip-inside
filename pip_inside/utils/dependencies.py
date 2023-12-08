@@ -83,7 +83,7 @@ class Package:
         self.version = version
         self.parent: 'Package' = parent
         self.children: List['Package'] = []
-        self._hit: bool = False
+        self._hit: Optional[str] = None
 
     def get_ref_path(self) -> List[str]:
         paths = []
@@ -95,7 +95,18 @@ class Package:
         return paths
 
     def echo(self, prefix: Optional[str] = None):
-        name = click.style(self.name_with_extras, fg=get_name_fg_by_group(self.group))
+        name = self.name_with_extras
+        fg = get_name_fg_by_group(self.group)
+        if self._hit and self._hit in name:
+            i = name.index(self._hit)
+            j = i + len(self._hit)
+            name = (
+                f"{click.style(name[:i], fg=fg)}"
+                f"{click.style(name[i:j], fg=fg, reverse=True)}"
+                f"{click.style(name[j:], fg=fg)}"
+            )
+        else:
+            name = click.style(name, fg=fg)
         name = f"{prefix} {name}" if prefix else name
         required = f"required: {self.specs or '*'}"
         installed = f"installed: {self.version}" if self.version else click.style('[not installed]', fg='yellow')
@@ -106,13 +117,15 @@ class Package:
     def _search(self, search: str):
         if search:
             if search in self.name:
-                self._hit = True
+                self._hit = search
+                for child in self.children:
+                    child._hit = search
             for child in self.children:
                 self._hit = child._search(search) or self._hit
         return self._hit
 
     def tree_list(self, skip='│', branch='├', last='└', hyphen='─', prefix='', search: Optional[str] = None) -> Generator[TreeEntry, None, None]:
-        children = [child for child in self.children if child._hit is True] if search else self.children
+        children = [child for child in self.children if child._hit is not None] if search else self.children
         n_children = len(children)
         for i, child in enumerate(children):
             if i < n_children - 1:
