@@ -279,7 +279,22 @@ class Dependencies:
                 entry.echo()
 
     def get_unused_dependencies_for(self, require: Requirement) -> List[str]:
+        def get_replyings(pkg: Package, _dep_name: str):
+            _pkg_name = norm_name(pkg.name)
+            if _pkg_name == _dep_name:
+                return pkg.parent
+            for pkg_child in pkg.children:
+                return get_replyings(pkg_child, _dep_name)
+
+        if len(self._root.children) == 0:
+            self.load_dependencies()
+
         name = require.key
-        other_in_use = set(self._get_all_project_dependencies(exclusions=[name]))
-        children = {norm_name(r.name) for r in self._distributions.get(name).requires()}
-        return list(children - other_in_use)
+        unused = []
+        for dep in self._distributions.get(name).requires():
+            dep_name = norm_name(dep.name)
+            replyings = [get_replyings(child, dep_name) for child in self._root.children]
+            replyings = list(filter(None, replyings))
+            if len(replyings) == 0:
+                unused.append(dep_name)
+        return unused
