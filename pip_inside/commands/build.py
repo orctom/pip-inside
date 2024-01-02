@@ -93,7 +93,7 @@ def build_package(path_dist: str):
     path_toml, path_dist = Path('pyproject.toml'), Path(path_dist)
     extra_meta = {
         'author': ','.join([author.get('name') for author in pyproject.get('project.authors')]),
-        'license': pyproject.get('project.license-expression'),
+        'license': pyproject.get('tool.pi.license-expression'),
         'home_page': pyproject.get('project.urls.homepage'),
     }
 

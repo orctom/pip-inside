@@ -1,4 +1,5 @@
 import os
+import re
 import shutil
 import subprocess
 from datetime import date
@@ -43,9 +44,9 @@ def check_pyproject_toml():
         build_system = data.get('build_system')
         if build_system is not None:
             if build_system.get('build-backend') == 'flit_core.buildapi':
-                raise Aborted(f"Skip, 'pyproject.toml' file already exists")
+                raise Aborted("Skip, 'pyproject.toml' file already exists")
             else:
-                raise Aborted(f"Skip, 'pyproject.toml' file already exists with unsupported 'build-system', only supports 'flit_core.buildapi'")
+                raise Aborted("Skip, 'pyproject.toml' file already exists with unsupported 'build-system', only supports 'flit_core.buildapi'")
     except Aborted as e:
         raise e
     except Exception as e:
@@ -86,7 +87,7 @@ def collect_dependencies():
     dependencies = []
     name = packages.prompt_a_package()
     while name is not None:
-        dependencies.append(name)
+        dependencies.add(name)
         name = packages.prompt_a_package(True)
     return dependencies
 
@@ -115,6 +116,7 @@ def get_default_author():
 def build_toml(meta):
     toml = tomlkit.document()
     project_table = tomlkit.table()
+    pi_table = tomlkit.table()
     project_table.add('name', meta.name)
     project_table.add('description', meta.description)
     if meta.author or meta.email:
@@ -128,31 +130,131 @@ def build_toml(meta):
     if meta.license != 'skip':
         license_inline.update({'file': 'LICENSE'})
         project_table.add('license', license_inline)
-        project_table.add('license-expression', meta.license)
-    project_table.add('dynamic', tomlkit.array('["version"]'))
+        pi_table.add('license-expression', meta.license)
+    project_table.add('dynamic', ["version"])
     project_table.add('requires-python', meta.requires_python)
-    dependencies_list = tomlkit.array()
-    dependencies_list.extend(meta.dependencies)
-    project_table.add('dependencies', dependencies_list)
-    toml.add('project', project_table)
+
+    dependencies = tomlkit.array()
+    dependencies.extend(meta.dependencies)
+    project_table.add('dependencies', dependencies.multiline(True))
+    project_table.add('optional-dependencies', tomlkit.array('["ruff",]').multiline(True))
 
     if meta.homepage:
         urls_table = tomlkit.table()
         urls_table.add('homepage', meta.homepage)
         project_table.add('urls', urls_table)
 
-    build_system_table = tomlkit.table()
-    build_system_table.add('requires', tomlkit.array('["flit_core>=3.8.0,<4"]'))
-    build_system_table.add('build-backend', 'flit_core.buildapi')
-    toml.add('build-system', build_system_table)
-
+    toml.add('project', project_table)
+    toml.add('build-system', get_build_system_table())
+    toml.add('tool', get_tool_table(pi_table, meta))
     return toml
+
+
+def get_build_system_table():
+    table = tomlkit.table()
+    table.add('requires', ["flit_core>=3.8.0,<4"])
+    table.add('build-backend', 'flit_core.buildapi')
+    return table
+
+
+def get_tool_table(pi_table, meta):
+    table = tomlkit.table(True)
+    table.add('pi', pi_table)
+    table.add('pytest', get_pytest_table(meta))
+    table.add('autopep8', get_autopep8_table(meta))
+    table.add('ruff', get_ruff_table(meta))
+    return table
+
+
+def get_pytest_table(meta):
+    table = tomlkit.table(True)
+    table_options = tomlkit.table()
+    table_options.add('minversion', '7.0')
+    table_options.add('addopts', '-ra -q -s')
+    table_options.add('testpaths', ["tests"])
+    table.add('ini_options', table_options)
+    return table
+
+
+def get_pytest_options_table(meta):
+    table = tomlkit.table()
+    table.add('minversion', '7.0')
+    table.add('addopts', '-ra -q -s')
+    table.add('testpaths', ["tests"])
+    return table
+
+
+def get_autopep8_table(meta):
+    table = tomlkit.table()
+    table.add('max_line_length', 135)
+    table.add('in-place', True)
+    table.add('recursive', True)
+    table.add('aggressive', 3)
+    return table
+
+
+def get_ruff_table(meta):
+    def get_target_version():
+        if meta and meta.requires_python:
+            p = re.compile('\D')
+            return f"py{p.sub('', meta.requires_python)}"
+        return None
+    table = tomlkit.table()
+    exclude = tomlkit.array()
+    exclude.extend([
+        ".bzr",
+        ".direnv",
+        ".eggs",
+        ".git",
+        ".git-rewrite",
+        ".hg",
+        ".mypy_cache",
+        ".nox",
+        ".pants.d",
+        ".pytype",
+        ".ruff_cache",
+        ".svn",
+        ".tox",
+        ".venv",
+        "__pypackages__",
+        "_build",
+        "buck-out",
+        "build",
+        "dist",
+        "node_modules",
+        "venv",
+        "data",
+        ".vscode",
+        ".ipynb_checkpoints",
+    ])
+    table.add('exclude', exclude.multiline(True))
+    table.add('line-length', 135)
+    target_version = get_target_version()
+    if target_version:
+        table.add('target-version', target_version)
+
+    table_lint = tomlkit.table()
+    table_lint.add('select', ["E4", "E7", "E9", "F"])
+    table_lint.add('ignore', [])
+    table_lint.add('fixable', ["ALL"])
+    table_lint.add('unfixable', [])
+    table_lint.add('dummy-variable-rgx', '^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$')
+    table.add('lint', table_lint)
+
+    table_format = tomlkit.table()
+    table_format.add('quote-style', 'double')
+    table_format.add('indent-style', 'space')
+    table_format.add('skip-magic-trailing-comma', False)
+    table_format.add('line-ending', 'auto')
+    table.add('format', table_format)
+
+    return table
 
 
 def write_toml(toml):
     with open('pyproject.toml', 'w') as f:
         tomlkit.dump(toml, f)
-        click.secho(f"Added 'pyproject.toml'", fg='bright_cyan')
+        click.secho("Added 'pyproject.toml'", fg='bright_cyan')
 
 
 def write_readme(meta):
@@ -160,7 +262,7 @@ def write_readme(meta):
         return
     with open('README.md', 'w') as f:
         f.write(f"# {meta.name}\n\n {meta.description}\n")
-        click.secho(f"Added 'README.md'", fg='bright_cyan')
+        click.secho("Added 'README.md'", fg='bright_cyan')
 
 
 def write_license(meta):
@@ -170,7 +272,7 @@ def write_license(meta):
     with license_file.open() as f_in, open('LICENSE', 'w') as f_out:
         year = date.today().year
         f_out.write(f_in.read().format(year=year, author=meta.author))
-        click.secho(f"Added 'LICENSE'", fg='bright_cyan')
+        click.secho("Added 'LICENSE'", fg='bright_cyan')
 
 
 def write_resource(filename: str):
