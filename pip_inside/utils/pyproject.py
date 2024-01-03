@@ -2,10 +2,10 @@ import os
 from typing import Any, Dict, List, Optional, Union
 
 import tomlkit
-from pkg_resources import Requirement
 
 from pip_inside import Aborted
 from pip_inside.utils import markers
+from pip_inside.utils.markers import Requirement
 
 from .misc import norm_module
 

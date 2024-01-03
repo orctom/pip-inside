@@ -4,25 +4,51 @@ import logging
 import os
 from typing import List, Union
 
-from packaging.markers import InvalidMarker, Op, UndefinedComparison, UndefinedEnvironmentName, Variable
-from pkg_resources import Requirement
+from pkg_resources import Requirement as _Requirement
+from pkg_resources._vendor.packaging.markers import InvalidMarker
+from pkg_resources._vendor.packaging.markers import Marker as _Marker
+from pkg_resources._vendor.packaging.markers import Op, UndefinedComparison, UndefinedEnvironmentName, Variable, _evaluate_markers
 
 LOGGER = logging.getLogger(__name__)
 
 
-STANDARD = (
-    'os_name',
-    'sys_platform',
-    'platform_machine',
-    'platform_python_implementation',
-    'platform_release',
-    'platform_system',
-    'platform_version',
-    'python_version',
-    'python_full_version',
-    'implementation_name',
-    'implementation_version',
-)
+class Marker(_Marker):
+    def __init__(self) -> None:
+        self._markers = []
+
+    def evaluate(self, environment=None):
+        def strip_doller_sign(item):
+            if not isinstance(item, Variable):
+                return item
+            return Variable(item.value.strip('$'))
+
+        current_environment = os.environ
+        if environment is not None:
+            current_environment.update(environment)
+        markers = [(strip_doller_sign(lhs), op, strip_doller_sign(rhs)) for lhs, op, rhs in self._markers]
+        return _evaluate_markers(markers, current_environment)
+
+
+class Requirement(_Requirement):
+    def __init__(self, requirement_string: str) -> None:
+        requirement_string = self._parse_requirements(requirement_string)
+        super().__init__(requirement_string)
+        marker = Marker()
+        if self.marker:
+            for lhs, op, rhs in self.marker._markers:
+                if lhs.__class__.__name__ == 'Value' and rhs.__class__.__name__ == 'Value':  # multi Value in different modules
+                    if '$' in lhs.value:
+                        marker._markers.append((Variable(lhs.value), op, rhs))
+                    elif '$' in rhs.value:
+                        marker._markers.append((lhs, op, Variable(rhs.value)))
+                else:
+                    marker._markers.append((lhs, op, rhs))
+        self.marker = marker
+
+    def _parse_requirements(self, line):
+        if ' #' in line:
+            line = line[:line.find(' #')]
+        return line
 
 
 def filter_requirements(requirements: List[Requirement]):
