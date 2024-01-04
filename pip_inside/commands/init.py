@@ -137,7 +137,10 @@ def build_toml(meta):
     dependencies = tomlkit.array()
     dependencies.extend(meta.dependencies)
     project_table.add('dependencies', dependencies.multiline(True))
-    project_table.add('optional-dependencies', tomlkit.array('["ruff",]').multiline(True))
+
+    optional_dependencies = tomlkit.table()
+    optional_dependencies.add('dev', tomlkit.array('["ruff",]').multiline(True))
+    project_table.add('optional-dependencies', optional_dependencies)
 
     if meta.homepage:
         urls_table = tomlkit.table()

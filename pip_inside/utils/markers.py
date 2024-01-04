@@ -33,8 +33,8 @@ class Requirement(_Requirement):
     def __init__(self, requirement_string: str) -> None:
         requirement_string = self._parse_requirements(requirement_string)
         super().__init__(requirement_string)
-        marker = Marker()
         if self.marker:
+            marker = Marker()
             for lhs, op, rhs in self.marker._markers:
                 if lhs.__class__.__name__ == 'Value' and rhs.__class__.__name__ == 'Value':  # multi Value in different modules
                     if '$' in lhs.value:
@@ -43,7 +43,7 @@ class Requirement(_Requirement):
                         marker._markers.append((lhs, op, Variable(rhs.value)))
                 else:
                     marker._markers.append((lhs, op, rhs))
-        self.marker = marker
+            self.marker = marker
 
     def _parse_requirements(self, line):
         if ' #' in line:
@@ -91,7 +91,7 @@ def filter_custom_markers(markers: Union[tuple, str, list]):
         if any(isinstance(m, Variable) for m in markers):
             return markers
         else:
-            return None
+            return []
     else:
         # should not happen
         return markers
