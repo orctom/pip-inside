@@ -28,6 +28,7 @@ P_RELEASE = re.compile(r"<time\s+datetime=\"([^\"]+)\"")
 P_DESCRIPTION = re.compile(r".*<p class=\"package-snippet__description\">(.+)</p>")
 
 P_VERSIONS_FROM_INSTALL = re.compile('(?<=from versions:)([a-zA-Z0-9., ]+)')
+HINT_QUIT = '(press "q" to quit)'
 
 
 def prompt_searches(name: Optional[str] = None):
@@ -69,16 +70,17 @@ def prompt_searches(name: Optional[str] = None):
             releases = {version: dists[0] for version, dists in pkg_info.get('releases').items() if dists and not dists[0].get('yanked')}
             releases_recent = '\n'.join([
                 f" - {version: <10} ({misc.formatted_date(dist.get('upload_time'), DATE_FORMAT)})"
-                for version, dist in list(sorted(releases.items(), key=lambda d: d[1].get('upload_time'), reverse=True))[:15]
+                for version, dist in list(sorted(releases.items(), key=lambda d: d[1].get('upload_time'), reverse=True))[:50]
             ])
             url = info.get('home_page') or (info.get('project_urls') or {}).get('Homepage') or ''
             deps = '\n'.join([f" - {dep}" for dep in info.get('requires_dist') or [] if 'extra' not in dep])
             pkg_descriptions = (
+                f"{colored(f'[{name}] {HINT_QUIT}')}\n\n"
                 f"{colored('Summary')}        : {info.get('summary')}\n"
                 f"{colored('URL')}            : {url}\n"
                 f"{colored('Python Version')} : {info.get('requires_python')}\n"
                 f"{colored('Dependencies')}   :\n{deps}\n\n"
-                f"{colored('Releases (15)')}  :\n{releases_recent}\n\n"
+                f"{colored('Recent Releases')}:\n{releases_recent}\n\n"
                 f"{colored('Description')}    :\n{info.get('description')}\n"
             )
             click.echo_via_pager(pkg_descriptions)
@@ -97,9 +99,9 @@ def show_versions(name: str):
     releases = {version: dists[0] for version, dists in pkg_info.get('releases').items() if dists and not dists[0].get('yanked')}
     releases_recent = '\n'.join([
         f" - {version: <10} ({misc.formatted_date(dist.get('upload_time'), DATE_FORMAT)})"
-        for version, dist in list(sorted(releases.items(), key=lambda d: d[1].get('upload_time'), reverse=True))[:15]
+        for version, dist in list(sorted(releases.items(), key=lambda d: d[1].get('upload_time'), reverse=True))
     ])
-    click.secho(f"{colored('Releases (15)')}  :\n{releases_recent}\n")
+    click.echo_via_pager(f"{colored(f'Releases {HINT_QUIT}')}:\n{releases_recent}\n")
 
 
 def prompt_a_package(continued: bool = False):
