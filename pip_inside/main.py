@@ -215,12 +215,12 @@ def deps(search: str, unused: bool, v: bool):
 
 @cli.command()
 @click.option('-v', 'v', is_flag=True, default=False, help="verbose")
-def lock(v: bool):
-    """Create or update version lock file 'pi.lock'"""
+def export(v: bool):
+    """Export dependencies to 'requirements.txt'"""
     try:
-        from .commands.lock import handle_lock
+        from .commands.export import handle_export
         click.secho(f"[python] {shutil.which('python')}", fg='cyan')
-        handle_lock()
+        handle_export()
     except Aborted as e:
         click.secho(e, fg='yellow')
     except Exception as e:
@@ -254,7 +254,7 @@ def version(short: bool, v: bool, version: str):
 @cli.command()
 @click.option('-v', 'v', is_flag=True, default=False, help="verbose")
 def upgrade(v: bool):
-    """Upgrade pip-inside and pip as well"""
+    """Upgrade pip and pip-inside"""
     try:
         from .commands.upgrade import handle_upgrade
         handle_upgrade()
