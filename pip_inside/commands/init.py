@@ -87,7 +87,7 @@ def collect_dependencies():
     dependencies = []
     name = packages.prompt_a_package()
     while name is not None:
-        dependencies.add(name)
+        dependencies.append(name)
         name = packages.prompt_a_package(True)
     return dependencies
 
@@ -99,7 +99,7 @@ def get_defaults():
         version='0.1.0',
         author_name=author_name,
         author_email=author_email,
-        requires_python='>=3.8',
+        requires_python='>=3.10',
     )
 
 

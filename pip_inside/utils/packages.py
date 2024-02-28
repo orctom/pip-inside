@@ -130,13 +130,13 @@ def prompt_a_package(continued: bool = False):
         if versions:
             version = inquirer.fuzzy(
                 message="Select the version:",
-                choices=['[set manually]'] + versions[:15],
+                choices=['[set manually]'] + sorted(versions, reverse=True),
                 vi_mode=True,
                 wrap_lines=True,
                 mandatory=True,
             ).execute()
             if version == '[set manually]':
-                version = inquirer.text(message="Version:", completer={v: None for v in versions[:15]}).execute().strip()
+                version = inquirer.text(message="Version:", completer={v: None for v in versions}).execute().strip()
         else:
             click.secho('Failed to fetch version list, please set version menually', fg='cyan')
             version = inquirer.text(message="Version:").execute().strip()
