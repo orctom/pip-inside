@@ -5,7 +5,7 @@ import os
 from typing import List, Union
 
 from pkg_resources import Requirement as _Requirement
-from pkg_resources._vendor.packaging.markers import InvalidMarker
+from pkg_resources._vendor.packaging.markers import InvalidMarker, default_environment, _format_marker
 from pkg_resources._vendor.packaging.markers import Marker as _Marker
 from pkg_resources._vendor.packaging.markers import Op, UndefinedComparison, UndefinedEnvironmentName, Variable, _evaluate_markers
 
@@ -18,15 +18,19 @@ class Marker(_Marker):
 
     def evaluate(self, environment=None):
         def strip_doller_sign(item):
-            if not isinstance(item, Variable):
+            if item.__class__.__name__ != 'Variable':
                 return item
             return Variable(item.value.strip('$'))
 
-        current_environment = os.environ
+        builtin_environment = default_environment()
+        current_environment = {**os.environ, **builtin_environment}
         if environment is not None:
             current_environment.update(environment)
         markers = [(strip_doller_sign(lhs), op, strip_doller_sign(rhs)) for lhs, op, rhs in self._markers]
         return _evaluate_markers(markers, current_environment)
+    
+    def __str__(self):
+        return _format_marker(self._markers or [])
 
 
 class Requirement(_Requirement):
