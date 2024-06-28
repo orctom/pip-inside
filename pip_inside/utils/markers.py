@@ -17,15 +17,11 @@ from packaging.markers import (
 )
 from packaging.markers import Marker as _Marker
 from packaging.requirements import Requirement as _Requirement
-from packaging.utils import canonicalize_name
-
-# from pkg_resources import Requirement as _Requirement
-# from pkg_resources._vendor.packaging.markers import InvalidMarker, default_environment, _format_marker
-# from pkg_resources._vendor.packaging.markers import Marker as _Marker
-# from pkg_resources._vendor.packaging.markers import Op, UndefinedComparison, UndefinedEnvironmentName, Variable, _evaluate_markers
+from .misc import norm_name
 
 LOGGER = logging.getLogger(__name__)
 P_NEG = re.compile('\s*\-f\s+http[^\s]+')
+
 
 class Marker(_Marker):
     def __init__(self) -> None:
@@ -71,7 +67,10 @@ class Requirement(_Requirement):
 
     @property
     def key(self):
-        return canonicalize_name(self.name)
+        return norm_name(self.name)
+
+    def is_makrers_matching(self):
+        return filter_requirement(self) is not None
 
 
 def filter_requirements(requirements: List[Requirement]):
@@ -118,7 +117,3 @@ def filter_custom_markers(markers: Union[tuple, str, list]):
     else:
         # should not happen
         return markers
-
-
-def key(requirement: _Requirement):
-    return canonicalize_name(requirement.name)

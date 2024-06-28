@@ -2,13 +2,14 @@ import collections
 import os
 import shutil
 import site
+from importlib.metadata import Distribution
+from importlib.metadata import distributions as find_distributions
 from pathlib import Path
 from typing import Dict, Generator, List, Optional, Set
 
 import click
-from packaging import Distribution, find_distributions
-from packaging.requirements import Requirement
 
+from .markers import Requirement
 from .misc import norm_name
 from .pyproject import PyProject
 
@@ -44,8 +45,8 @@ class Distributions:
     def _find_distributions(self) -> Dict[str, Distribution]:
         distributions: Dict[str, Distribution] = {}
         site_package_path = get_site_package_path()
-        for dist in find_distributions(site_package_path):
-            distributions[dist.key] = dist
+        for dist in find_distributions(path=[site_package_path]):
+            distributions[norm_name(dist.metadata['Name'])] = dist
         return distributions
 
     def get_all(self) -> List[Distribution]:
@@ -186,7 +187,7 @@ class Dependencies:
         exclusion = set([project_name] + dependencies_project)
         parents = collections.defaultdict(set)
         for dist in self._distributions.get_all():
-            name = norm_name(dist.key)
+            name = norm_name(dist.metadata['Name'])
             if name in exclusion:
                 continue
             child = Package(name, parent=self._root_non_dep)
@@ -198,8 +199,12 @@ class Dependencies:
 
     def _load_children(self, pkg: Package, exclusion: Optional[Set[str]] = None, parents: Optional[Dict[str, Set[str]]] = None):
         def get_children():
-            for r in dist.requires():
-                name, specs_r = norm_name(r.name), str(r.specifier)
+            requirements = dist.requires or []
+            for require in requirements:
+                r = Requirement(require)
+                if not r.is_makrers_matching():
+                    continue
+                name, specs_r = r.key, str(r.specifier)
                 if exclusion is not None and name in exclusion:
                     continue
                 ref_path = pkg.get_ref_path()
@@ -217,7 +222,6 @@ class Dependencies:
 
         def get_extras():
             extras = pkg.extras
-            dist._dep_map.get(extras)
             if extras is None or len(extras) == 0 or len(dist._dep_map) == 0:
                 return
 
@@ -292,10 +296,11 @@ class Dependencies:
 
         name = require.key
         unused = []
-        for dep in self._distributions.get(name).requires():
-            dep_name = norm_name(dep.name)
-            replyings = [get_replyings(child, dep_name) for child in self._root.children]
-            replyings = list(filter(None, replyings))
-            if len(replyings) == 0:
-                unused.append(dep_name)
+        if (dist := self._distributions.get(name)) is not None:
+            for dep in dist.requires():
+                dep_name = norm_name(dep.name)
+                replyings = [get_replyings(child, dep_name) for child in self._root.children]
+                replyings = list(filter(None, replyings))
+                if len(replyings) == 0:
+                    unused.append(dep_name)
         return unused

@@ -6,7 +6,7 @@ from typing import Optional
 
 import click
 from InquirerPy import inquirer
-from packaging.requirements import Requirement
+from pip_inside.utils.markers import Requirement
 
 from pip_inside.utils.pyproject import PyProject
 
