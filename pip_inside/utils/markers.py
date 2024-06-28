@@ -5,8 +5,9 @@ import os
 import re
 from typing import List, Union
 
+from packaging.markers import InvalidMarker
+from packaging.markers import Marker as _Marker
 from packaging.markers import (
-    InvalidMarker,
     Op,
     UndefinedComparison,
     UndefinedEnvironmentName,
@@ -15,8 +16,8 @@ from packaging.markers import (
     _format_marker,
     default_environment,
 )
-from packaging.markers import Marker as _Marker
 from packaging.requirements import Requirement as _Requirement
+
 from .misc import norm_name
 
 LOGGER = logging.getLogger(__name__)
@@ -28,17 +29,13 @@ class Marker(_Marker):
         self._markers = []
 
     def evaluate(self, environment=None):
-        def strip_doller_sign(item):
-            if item.__class__.__name__ != 'Variable':
-                return item
-            return Variable(item.value.strip('$'))
-
         builtin_environment = default_environment()
         current_environment = {**os.environ, **builtin_environment}
         if environment is not None:
             current_environment.update(environment)
-        markers = [(strip_doller_sign(lhs), op, strip_doller_sign(rhs)) for lhs, op, rhs in self._markers]
-        return _evaluate_markers(markers, current_environment)
+        current_environment['extra'] = current_environment.get('extra', '')
+        markers = _markers_strip_doller_sign(self._markers)
+        return _evaluate_markers(markers._markers, current_environment)
 
     def __str__(self):
         return _format_marker(self._markers or [])
@@ -49,16 +46,7 @@ class Requirement(_Requirement):
         requirement_string = self._parse_requirements(requirement_string)
         super().__init__(requirement_string)
         if self.marker:
-            marker = Marker()
-            for lhs, op, rhs in self.marker._markers:
-                if lhs.__class__.__name__ == 'Value' and rhs.__class__.__name__ == 'Value':  # multi Value in different modules
-                    if '$' in lhs.value:
-                        marker._markers.append((Variable(lhs.value), op, rhs))
-                    elif '$' in rhs.value:
-                        marker._markers.append((lhs, op, Variable(rhs.value)))
-                else:
-                    marker._markers.append((lhs, op, rhs))
-            self.marker = marker
+            self.marker = _markers_value_to_variable(self.marker._markers)
 
     def _parse_requirements(self, line):
         if ' #' in line:
@@ -117,3 +105,52 @@ def filter_custom_markers(markers: Union[tuple, str, list]):
     else:
         # should not happen
         return markers
+
+
+def _markers_value_to_variable(markers, marker: Marker = None):
+    def to_variable(item):
+        if item.__class__.__name__ == 'Value':
+            if '$' in item.value:
+                return Variable(item.value)
+        return item
+
+    is_top = marker is None
+    marker = marker or Marker()
+    clz = type(markers)
+
+    if len(markers) != 3:
+        for _markers in markers:
+            _markers_value_to_variable(_markers, marker)
+
+    else:
+        lhs, op, rhs = markers
+        _markers = clz([to_variable(lhs), op, to_variable(rhs)])
+        if is_top:
+            marker._markers = _markers
+        else:
+            marker._markers.append(_markers)
+    return marker
+
+
+def _markers_strip_doller_sign(markers, marker: Marker = None):
+    def strip_doller_sign(item):
+        if item.__class__.__name__ != 'Variable':
+            return item
+        return Variable(item.value.strip('$'))
+
+    is_top = marker is None
+    marker = marker or Marker()
+    clz = type(markers)
+
+    if len(markers) != 3:
+        for _markers in markers:
+            _markers_strip_doller_sign(_markers, marker)
+
+    else:
+        lhs, op, rhs = markers
+        _markers = clz([strip_doller_sign(lhs), op, strip_doller_sign(rhs)])
+        if is_top:
+            marker._markers = _markers
+        else:
+            marker._markers.append(_markers)
+    return marker
