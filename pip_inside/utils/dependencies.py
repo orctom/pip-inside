@@ -6,7 +6,8 @@ from pathlib import Path
 from typing import Dict, Generator, List, Optional, Set
 
 import click
-from pkg_resources import Distribution, Requirement, find_distributions
+from packaging import Distribution, find_distributions
+from packaging.requirements import Requirement
 
 from .misc import norm_name
 from .pyproject import PyProject

@@ -5,7 +5,7 @@ import tomlkit
 
 from pip_inside import Aborted
 from pip_inside.utils import markers
-from pip_inside.utils.markers import Requirement
+from pip_inside.utils.markers import Requirement, key
 
 from .misc import norm_module
 
@@ -116,7 +116,7 @@ class PyProject:
         dependencies = self._dependencies.get(group)
         if dependencies:
             for i, dep in enumerate(dependencies):
-                if require.key != dep.key:
+                if key(require) != key(dep):
                     continue
                 if str(require) == str(dep):
                     return False
@@ -134,7 +134,7 @@ class PyProject:
         dependencies = self._dependencies.get(group)
         if not dependencies:
             return False
-        deps = [dep for dep in dependencies if dep.key != require.key]
+        deps = [dep for dep in dependencies if key(dep) != key(require)]
         if len(deps) == len(dependencies):
             return False
         self._dependencies[group] = deps

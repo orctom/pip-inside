@@ -22,7 +22,10 @@ def handle_install(groups: List[str], quiet: bool = False):
             proceed = inquirer.confirm(message='Not in virutal env, sure to proceed?', default=False).execute()
             if not proceed:
                 return
-    _install_from_pi_lock(groups) or _install_from_pyproject_toml(groups)
+    try:
+        _install_from_pi_lock(groups) or _install_from_pyproject_toml(groups)
+    except Exception:
+        sys.exit(1)
 
 
 def _install_from_pi_lock(groups: List[str]):
@@ -61,6 +64,7 @@ def _install_group(group: str, dependencies: list):
     click.secho(f"Group: {group}", fg='cyan')
     try:
         cmd = [shutil.which('python'), '-m', 'pip', 'install', *dependencies]
-        subprocess.run(cmd, stderr=sys.stderr, stdout=sys.stdout)
+        if subprocess.run(cmd, stderr=sys.stderr, stdout=sys.stdout).returncode == 1:
+            sys.exit(1)
     except subprocess.CalledProcessError:
         sys.exit(1)

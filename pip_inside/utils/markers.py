@@ -2,15 +2,30 @@
 # https://peps.python.org/pep-0508/
 import logging
 import os
+import re
 from typing import List, Union
 
-from pkg_resources import Requirement as _Requirement
-from pkg_resources._vendor.packaging.markers import InvalidMarker, default_environment, _format_marker
-from pkg_resources._vendor.packaging.markers import Marker as _Marker
-from pkg_resources._vendor.packaging.markers import Op, UndefinedComparison, UndefinedEnvironmentName, Variable, _evaluate_markers
+from packaging.markers import (
+    InvalidMarker,
+    Op,
+    UndefinedComparison,
+    UndefinedEnvironmentName,
+    Variable,
+    _evaluate_markers,
+    _format_marker,
+    default_environment,
+)
+from packaging.markers import Marker as _Marker
+from packaging.requirements import Requirement as _Requirement
+from packaging.utils import canonicalize_name
+
+# from pkg_resources import Requirement as _Requirement
+# from pkg_resources._vendor.packaging.markers import InvalidMarker, default_environment, _format_marker
+# from pkg_resources._vendor.packaging.markers import Marker as _Marker
+# from pkg_resources._vendor.packaging.markers import Op, UndefinedComparison, UndefinedEnvironmentName, Variable, _evaluate_markers
 
 LOGGER = logging.getLogger(__name__)
-
+P_NEG = re.compile('\s*\-f\s+http[^\s]+')
 
 class Marker(_Marker):
     def __init__(self) -> None:
@@ -28,7 +43,7 @@ class Marker(_Marker):
             current_environment.update(environment)
         markers = [(strip_doller_sign(lhs), op, strip_doller_sign(rhs)) for lhs, op, rhs in self._markers]
         return _evaluate_markers(markers, current_environment)
-    
+
     def __str__(self):
         return _format_marker(self._markers or [])
 
@@ -53,6 +68,10 @@ class Requirement(_Requirement):
         if ' #' in line:
             line = line[:line.find(' #')]
         return line
+
+    @property
+    def key(self):
+        return canonicalize_name(self.name)
 
 
 def filter_requirements(requirements: List[Requirement]):
@@ -99,3 +118,7 @@ def filter_custom_markers(markers: Union[tuple, str, list]):
     else:
         # should not happen
         return markers
+
+
+def key(requirement: _Requirement):
+    return canonicalize_name(requirement.name)

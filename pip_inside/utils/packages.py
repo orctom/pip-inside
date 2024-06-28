@@ -15,8 +15,8 @@ from . import misc, spinner
 try:
     from importlib.metadata import PackageNotFoundError, distribution
 except ImportError:
-    from pkg_resources import DistributionNotFound as PackageNotFoundError
-    from pkg_resources import get_distribution as distribution
+    from packaging import DistributionNotFound as PackageNotFoundError
+    from packaging import get_distribution as distribution
 
 
 API_URL = "https://pypi.org/search/?q={query}"
@@ -130,7 +130,7 @@ def prompt_a_package(continued: bool = False):
         if versions:
             version = inquirer.fuzzy(
                 message="Select the version:",
-                choices=['[set manually]'] + sorted(versions, reverse=True),
+                choices=['[set manually]', '*'] + sorted_versions(versions),
                 vi_mode=True,
                 wrap_lines=True,
                 mandatory=True,
@@ -140,7 +140,7 @@ def prompt_a_package(continued: bool = False):
         else:
             click.secho('Failed to fetch version list, please set version menually', fg='cyan')
             version = inquirer.text(message="Version:").execute().strip()
-        if version:
+        if version and version != '*':
             name = f"{name}{version}" if misc.has_ver_spec(version) else f"{name}=={version}"
         return name
 
@@ -242,3 +242,12 @@ def meta_from_pypi(name: str, retries: int = 3):
 
 def colored(text, color='blue'):
     return click.style(text, fg=color)
+
+
+def sorted_versions(versions: list):
+    if not versions:
+        return versions
+    try:
+        return sorted(versions, key=lambda s: list(map(int, s.split('.'))), reverse=True)
+    except Exception:
+        return versions

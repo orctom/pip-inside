@@ -10,7 +10,9 @@
             "console": "integratedTerminal",
             "args": [
                 "pip_inside.main",
-                "install"
+                "install",
+                "-G",
+                "dev",
             ],
             "justMyCode": false
         },

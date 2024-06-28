@@ -6,7 +6,7 @@ from typing import Optional
 
 import click
 from InquirerPy import inquirer
-from pkg_resources import Requirement
+from packaging.requirements import Requirement
 
 from pip_inside.utils.pyproject import PyProject
 
@@ -24,7 +24,8 @@ def handle_add(name: str, group: Optional[str]):
             return
 
         cmd = [shutil.which('python'), '-m', 'pip', 'install', str(require)]
-        if subprocess.run(cmd, stderr=sys.stderr, stdout=sys.stdout).returncode == 0:
-            pyproject.flush()
+        if subprocess.run(cmd, stderr=sys.stderr, stdout=sys.stdout).returncode == 1:
+            sys.exit(1)
+        pyproject.flush()
     except subprocess.CalledProcessError:
         sys.exit(1)
