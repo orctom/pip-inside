@@ -202,7 +202,7 @@ class Dependencies:
             requirements = dist.requires or []
             for require in requirements:
                 r = Requirement(require)
-                if not r.is_makrers_matching():
+                if not r.is_markers_matching():
                     continue
                 name, specs_r = r.key, str(r.specifier)
                 if exclusion is not None and name in exclusion:

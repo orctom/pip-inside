@@ -5,9 +5,8 @@ import os
 import re
 from typing import List, Union
 
-from packaging.markers import InvalidMarker
-from packaging.markers import Marker as _Marker
 from packaging.markers import (
+    InvalidMarker,
     Op,
     UndefinedComparison,
     UndefinedEnvironmentName,
@@ -16,6 +15,7 @@ from packaging.markers import (
     _format_marker,
     default_environment,
 )
+from packaging.markers import Marker as _Marker
 from packaging.requirements import Requirement as _Requirement
 
 from .misc import norm_name
@@ -43,8 +43,8 @@ class Marker(_Marker):
 
 class Requirement(_Requirement):
     def __init__(self, requirement_string: str) -> None:
-        requirement_string = self._parse_requirements(requirement_string)
-        super().__init__(requirement_string)
+        self.requirement_string = self._parse_requirements(requirement_string)
+        super().__init__(self.requirement_string)
         if self.marker:
             self.marker = _markers_value_to_variable(self.marker._markers)
 
@@ -57,8 +57,11 @@ class Requirement(_Requirement):
     def key(self):
         return norm_name(self.name)
 
-    def is_makrers_matching(self):
+    def is_markers_matching(self):
         return filter_requirement(self) is not None
+
+    def __repr__(self) -> str:
+        return self.requirement_string
 
 
 def filter_requirements(requirements: List[Requirement]):
@@ -120,7 +123,10 @@ def _markers_value_to_variable(markers, marker: Marker = None):
 
     if len(markers) != 3:
         for _markers in markers:
-            _markers_value_to_variable(_markers, marker)
+            if isinstance(_markers, str):
+                marker._markers.append(_markers)
+            else:
+                _markers_value_to_variable(_markers, marker)
 
     else:
         lhs, op, rhs = markers
@@ -144,7 +150,10 @@ def _markers_strip_doller_sign(markers, marker: Marker = None):
 
     if len(markers) != 3:
         for _markers in markers:
-            _markers_strip_doller_sign(_markers, marker)
+            if isinstance(_markers, str):
+                marker._markers.append(_markers)
+            else:
+                _markers_strip_doller_sign(_markers, marker)
 
     else:
         lhs, op, rhs = markers
