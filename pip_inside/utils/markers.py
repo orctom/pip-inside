@@ -22,6 +22,7 @@ from .misc import norm_name
 
 LOGGER = logging.getLogger(__name__)
 P_NEG = re.compile('\s*\-f\s+http[^\s]+')
+P_INDEX_OPTIONS = re.compile(r'\s+(?:-i|--index-url|-f|--find-links)\s+')
 
 
 class Marker(_Marker):
@@ -44,7 +45,13 @@ class Marker(_Marker):
 class Requirement(_Requirement):
     def __init__(self, requirement_string: str) -> None:
         self.requirement_string = self._parse_requirements(requirement_string)
-        super().__init__(self.requirement_string)
+        m = P_INDEX_OPTIONS.search(self.requirement_string)
+        if m:
+            requirement_string = self.requirement_string[:m.start()].strip()
+            self.index_options = self.requirement_string[m.start():].strip()
+        else:
+            requirement_string, self.index_options = self.requirement_string, None
+        super().__init__(requirement_string)
         if self.marker:
             self.marker = _markers_value_to_variable(self.marker._markers)
 
@@ -60,8 +67,11 @@ class Requirement(_Requirement):
     def is_markers_matching(self):
         return filter_requirement(self) is not None
 
+    def __str__(self) -> str:
+        return f"{super().__str__()} {self.index_options}" if self.index_options else super().__str__()
+
     def __repr__(self) -> str:
-        return self.requirement_string
+        return str(self)
 
 
 def filter_requirements(requirements: List[Requirement]):

@@ -36,7 +36,7 @@ pip-inside = "pip_inside.main:cli"
 [project.optional-dependencies]
 dev = [
     "ruff",
-    "passlib[bcrypt]",  # for test `pi deps`
+    "passlib[bcrypt]",
 ]
 
 [build-system]

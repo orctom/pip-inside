@@ -3,11 +3,12 @@ import shutil
 import subprocess
 import sys
 from typing import Optional
+import shlex
 
 import click
 from InquirerPy import inquirer
-from pip_inside.utils.markers import Requirement
 
+from pip_inside.utils.markers import Requirement
 from pip_inside.utils.pyproject import PyProject
 
 
@@ -23,7 +24,7 @@ def handle_add(name: str, group: Optional[str]):
             click.secho("Skip, already installed as main dependency")
             return
 
-        cmd = [shutil.which('python'), '-m', 'pip', 'install', str(require)]
+        cmd = shlex.split(f"{shutil.which('python')} -m pip install {require}")
         if subprocess.run(cmd, stderr=sys.stderr, stdout=sys.stdout).returncode == 1:
             sys.exit(1)
         pyproject.flush()
