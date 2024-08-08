@@ -55,6 +55,23 @@ def search(name, v: bool):
 @cli.command()
 @click.argument('name', required=False, type=str)
 @click.option('-v', 'v', is_flag=True, default=False, help="verbose")
+def info(name, v: bool):
+    """Get info of a package from PYPI"""
+    try:
+        from .utils.packages import show_info
+        show_info(name)
+    except Aborted as e:
+        click.secho(e, fg='yellow')
+    except Exception as e:
+        click.secho(e, fg='red')
+        if v:
+            import traceback
+            click.secho(traceback.format_exc(), fg='red')
+
+
+@cli.command()
+@click.argument('name', required=False, type=str)
+@click.option('-v', 'v', is_flag=True, default=False, help="verbose")
 def versions(name, v: bool):
     """Show recent releases of a package in PYPI"""
     try:

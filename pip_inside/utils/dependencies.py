@@ -11,7 +11,7 @@ from typing import Dict, Generator, List, Optional, Set
 import click
 
 from .markers import Requirement
-from .misc import norm_name
+from .misc import norm_name, group_by_extras
 from .pyproject import PyProject
 
 ROOT = 'root'
@@ -226,20 +226,17 @@ class Dependencies:
             if extras is None or len(extras) == 0:
                 return
 
-            p = re.compile('\s*;\s+extra\s+==\s+["\']')
-            for required in dist.requires:
-                splits = p.split(required)
-                r = Requirement(splits[0])
-                extra = splits[1][:-1] if len(splits) > 1 else None
-                if extra not in extras:
-                    continue
-                dep = self._direct_dependencies.get(r.name)
-                specs, group = (str(r.specifier), None) if dep is None else (dep.specs or str(r.specifier), dep.group)
-                child = Package(r.key, specs=specs, group=group, parent=pkg)
-                pkg.children.append(child)
-                if parents is not None:
-                    parents[r.key].add(pkg.name)
-                self._load_children(child, exclusion, parents)
+            groups = group_by_extras(dist.requires)
+            for extra in extras:
+                for name in groups.get(extra):
+                    r = Requirement(name)
+                    dep = self._direct_dependencies.get(r.name)
+                    specs, group = (str(r.specifier), None) if dep is None else (dep.specs or str(r.specifier), dep.group)
+                    child = Package(r.key, specs=specs, group=group, parent=pkg)
+                    pkg.children.append(child)
+                    if parents is not None:
+                        parents[r.key].add(pkg.name)
+                    self._load_children(child, exclusion, parents)
 
         dist = self._distributions.get(pkg.name)
         if dist is None:

@@ -1,11 +1,13 @@
 import os
 import re
+from collections import defaultdict
 from datetime import datetime
 
 P_HAS_VERSION_SPECIFIERS = re.compile('(?:===|~=|==|!=|<=|>=|<|>)')
 URL_VERSION_SPECIFIERS = 'https://peps.python.org/pep-0440/#version-specifiers'
 
 P_KV_SEP = re.compile('\s*=\s*')
+P_EXTRA_SEP = re.compile('\s*;\s+extra\s+==\s+')
 
 
 def has_ver_spec(name: str):
@@ -54,6 +56,19 @@ def formatted_date(date_str, fmt='%Y-%m-%d %H:%M:%S'):
         return datetime.fromisoformat(date_str).strftime(fmt)
     except Exception:
         return date_str
+
+
+def group_by_extras(requires: list):
+    groups = defaultdict(list)
+    for required in requires:
+        splits = P_EXTRA_SEP.split(required)
+        if len(splits) == 1:
+            req, extra = required, ''
+        else:
+            req, extra = splits
+            extra = extra[1:-1]
+        groups[extra].append(req)
+    return groups
 
 
 is_in_docker = is_in_container
