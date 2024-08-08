@@ -1,5 +1,6 @@
 import collections
 import os
+import re
 import shutil
 import site
 from importlib.metadata import Distribution
@@ -74,7 +75,7 @@ class Package:
                  name: str,
                  *,
                  specs: str = None,
-                 extras: str = None,
+                 extras: Optional[set] = None,
                  group: str = None,
                  version: str = None,
                  parent: 'Package' = None) -> None:
@@ -222,18 +223,23 @@ class Dependencies:
 
         def get_extras():
             extras = pkg.extras
-            if extras is None or len(extras) == 0 or len(dist._dep_map) == 0:
+            if extras is None or len(extras) == 0:
                 return
 
-            for extra in extras:
-                for r in dist._dep_map.get(extra, []):
-                    dep = self._direct_dependencies.get(r.name)
-                    specs, group = (r.specs, None) if dep is None else (dep.specs or r.specs, dep.group)
-                    child = Package(r.key, specs=specs, group=group, parent=pkg)
-                    pkg.children.append(child)
-                    if parents is not None:
-                        parents[r.key].add(pkg.name)
-                    self._load_children(child, exclusion, parents)
+            p = re.compile('\s*;\s+extra\s+==\s+["\']')
+            for required in dist.requires:
+                splits = p.split(required)
+                r = Requirement(splits[0])
+                extra = splits[1][:-1] if len(splits) > 1 else None
+                if extra not in extras:
+                    continue
+                dep = self._direct_dependencies.get(r.name)
+                specs, group = (str(r.specifier), None) if dep is None else (dep.specs or str(r.specifier), dep.group)
+                child = Package(r.key, specs=specs, group=group, parent=pkg)
+                pkg.children.append(child)
+                if parents is not None:
+                    parents[r.key].add(pkg.name)
+                self._load_children(child, exclusion, parents)
 
         dist = self._distributions.get(pkg.name)
         if dist is None:
