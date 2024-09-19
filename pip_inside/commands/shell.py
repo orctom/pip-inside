@@ -70,10 +70,15 @@ def _spaw_new_shell(is_1st_time: bool):
 def _find_conda_env():
     try:
         with open('.venv/pyvenv.cfg') as f:
-            values = dict(P_KV_SEP.split(x.strip()) for x in f.readlines())
-            home = values.get('home')
-            if home is None or 'conda' not in home:
-                return None
-            return home[:-4] if home.endswith('/bin') else home
+            for line in f.readlines():
+                if not line:
+                    continue
+                m = P_KV_SEP.match(line)
+                if not m:
+                    continue
+                key, value = m.group('key'), m.group('value')
+                if key == 'home' and 'conda' not in value:
+                    return value[:-4] if value.endswith('/bin') else value
+        return None
     except Exception:
         return None
