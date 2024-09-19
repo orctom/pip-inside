@@ -8,7 +8,7 @@ from pathlib import Path
 import pexpect
 
 from pip_inside import Aborted
-from pip_inside.utils.misc import P_KV_SEP
+from pip_inside.utils.misc import P_KV
 
 
 def handle_shell():
@@ -73,11 +73,11 @@ def _find_conda_env():
             for line in f.readlines():
                 if not line:
                     continue
-                m = P_KV_SEP.match(line)
+                m = P_KV.match(line)
                 if not m:
                     continue
-                key, value = m.group('key'), m.group('value')
-                if key == 'home' and 'conda' not in value:
+                key, value = m.group('key').strip(), m.group('value').strip()
+                if key == 'home' and 'conda' in value:
                     return value[:-4] if value.endswith('/bin') else value
         return None
     except Exception:

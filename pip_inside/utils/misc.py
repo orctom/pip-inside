@@ -6,7 +6,7 @@ from datetime import datetime
 P_HAS_VERSION_SPECIFIERS = re.compile('(?:===|~=|==|!=|<=|>=|<|>)')
 URL_VERSION_SPECIFIERS = 'https://peps.python.org/pep-0440/#version-specifiers'
 
-P_KV_SEP = re.compile(r'(?P<key>[^=]+)=(?P<value>.+)')
+P_KV = re.compile(r'(?P<key>[^=]+)\s*=\s*(?P<value>.+)')
 P_EXTRA_SEP = re.compile(r'\s*;\s+extra\s+==\s+')
 
 
