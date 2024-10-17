@@ -11,7 +11,7 @@ from typing import Dict, Generator, List, Optional, Set
 import click
 
 from .markers import Requirement
-from .misc import norm_name, group_by_extras
+from .misc import group_by_extras, norm_name
 from .pyproject import PyProject
 
 ROOT = 'root'
@@ -300,10 +300,11 @@ class Dependencies:
         name = require.key
         unused = []
         if (dist := self._distributions.get(name)) is not None:
-            for dep in dist.requires():
-                dep_name = norm_name(dep.name)
-                replyings = [get_replyings(child, dep_name) for child in self._root.children]
-                replyings = list(filter(None, replyings))
-                if len(replyings) == 0:
-                    unused.append(dep_name)
+            if dist.requires:
+                for dep in dist.requires:
+                    dep_name = norm_name(dep.name)
+                    replyings = [get_replyings(child, dep_name) for child in self._root.children]
+                    replyings = list(filter(None, replyings))
+                    if len(replyings) == 0:
+                        unused.append(dep_name)
         return unused
