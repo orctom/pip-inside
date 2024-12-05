@@ -59,6 +59,8 @@ def formatted_date(date_str, fmt='%Y-%m-%d %H:%M:%S'):
 
 
 def group_by_extras(requires: list):
+    if not requires:
+        return {}
     groups = defaultdict(list)
     for required in requires:
         splits = P_EXTRA_SEP.split(required)

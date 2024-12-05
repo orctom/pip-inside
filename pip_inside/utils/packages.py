@@ -175,7 +175,10 @@ def check_version(package_name: str) -> Union[str, bool]:
 
 def search(name: str, retries: int = 3):
     def fmt(n, v, r, d):
-        return f"{n: <{n_n}} {v: <{n_v}} {r: <{n_r}} {d: <{n_d}}"
+        if v:
+            return f"{n: <{n_n}} {v: <{n_v}} {r: <{n_r}} {d: <{n_d}}"
+        else:
+            return f"{n: <{n_n}} {r: <{n_r}} {d: <{n_d}}"
 
     url = API_URL.format(query=name)
     for i in range(retries):
@@ -187,6 +190,8 @@ def search(name: str, retries: int = 3):
             if len(names) == 0:
                 return None
             versions = P_VERSION.findall(page_data)
+            if not versions:
+                versions = [''] * len(names)
             releases = P_RELEASE.findall(page_data)
             descriptions = P_DESCRIPTION.findall(page_data)
             releases = [

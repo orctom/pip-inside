@@ -3,7 +3,7 @@
     "configurations": [
         {
             "name": "install",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "program": "-m",
             "env": {},
@@ -18,7 +18,7 @@
         },
         {
             "name": "deps",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "program": "-m",
             "env": {},
@@ -34,7 +34,7 @@
         },
         {
             "name": "freeze",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "program": "-m",
             "env": {},
@@ -48,7 +48,7 @@
         },
         {
             "name": "dummy",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "program": "-m",
             "env": {},
