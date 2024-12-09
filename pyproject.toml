@@ -1,5 +1,5 @@
 [project]
-name = "pip-inside"
+name = "pip_inside"
 description = "Like poetry, but it's pip"
 authors = [
     { name = "orctom", email = "orctom@gmail.com" },
