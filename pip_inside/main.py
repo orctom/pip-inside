@@ -2,7 +2,6 @@ import shutil
 from typing import List
 
 import click
-from InquirerPy import inquirer
 
 from . import Aborted, __version__
 
@@ -36,24 +35,7 @@ def init(v: bool):
 
 
 @cli.command()
-@click.argument('name', required=False, type=str)
-@click.option('-v', 'v', is_flag=True, default=False, help="verbose")
-def search(name, v: bool):
-    """Search a package from PYPI"""
-    try:
-        from .utils.packages import prompt_searches
-        prompt_searches(name)
-    except Aborted as e:
-        click.secho(e, fg='yellow')
-    except Exception as e:
-        click.secho(e, fg='red')
-        if v:
-            import traceback
-            click.secho(traceback.format_exc(), fg='red')
-
-
-@cli.command()
-@click.argument('name', required=False, type=str)
+@click.argument('name', required=True, type=str)
 @click.option('-v', 'v', is_flag=True, default=False, help="verbose")
 def info(name, v: bool):
     """Get info of a package from PYPI"""
@@ -70,7 +52,7 @@ def info(name, v: bool):
 
 
 @cli.command()
-@click.argument('name', required=False, type=str)
+@click.argument('name', required=True, type=str)
 @click.option('-v', 'v', is_flag=True, default=False, help="verbose")
 def versions(name, v: bool):
     """Show recent releases of a package in PYPI"""
@@ -87,22 +69,15 @@ def versions(name, v: bool):
 
 
 @cli.command()
-@click.argument('name', required=False, type=str)
+@click.argument('names', required=True, type=str)
 @click.option('-G', '--group', default='main', help='dependency group')
 @click.option('-v', 'v', is_flag=True, default=False, help="verbose")
-def add(name, group, v: bool):
-    """Add a package as project dependency"""
+def add(names, group, v: bool):
+    """Add package(s) to project dependencies"""
     try:
         from .commands.add import handle_add
-        from .utils.packages import prompt_a_package
         click.secho(f"[python] {shutil.which('python')}", fg='cyan')
-        if name:
-            handle_add(name, group)
-        else:
-            name = prompt_a_package()
-            while name is not None:
-                handle_add(name, group)
-                name = prompt_a_package(True)
+        handle_add(names, group)
     except Aborted as e:
         click.secho(e, fg='yellow')
     except Exception as e:
@@ -113,17 +88,15 @@ def add(name, group, v: bool):
 
 
 @cli.command()
-@click.argument('name', required=False, type=str)
+@click.argument('names', required=True, type=str)
 @click.option('-G', '--group', default='main', show_default=True, help='dependency group')
 @click.option('-v', 'v', is_flag=True, default=False, help="verbose")
-def remove(name, group, v: bool):
-    """Remove a package from project dependencies"""
+def remove(names, group, v: bool):
+    """Remove package(s) from project dependencies"""
     try:
         from .commands.remove import handle_remove
         click.secho(f"[python] {shutil.which('python')}", fg='cyan')
-        if name is None:
-            name = inquirer.text(message="package name:").execute()
-        handle_remove(name, group)
+        handle_remove(names, group)
     except Aborted as e:
         click.secho(e, fg='yellow')
     except Exception as e:
@@ -198,7 +171,7 @@ def publish(repository: str, dist: str, interactive: bool, v: bool):
 @cli.command()
 @click.option('-v', 'v', is_flag=True, default=False, help="verbose")
 def shell(v: bool):
-    """Ensure '.venv' virtualenv, and new shell into it"""
+    """Create or activate virtualenv in '.venv', and new shell into it"""
     try:
         from .commands.shell import handle_shell
         handle_shell()
