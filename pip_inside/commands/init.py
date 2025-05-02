@@ -12,7 +12,7 @@ from InquirerPy import inquirer
 from InquirerPy.base.control import Choice
 
 from pip_inside import Aborted
-from pip_inside.utils import licenses, misc, packages, versions
+from pip_inside.utils import licenses, misc, versions
 
 
 def handle_init():
@@ -65,10 +65,6 @@ def collect_metadata():
     license_name = inquirer.fuzzy(message="License:", choices=license_choices, vi_mode=True, wrap_lines=True).execute()
     requires_python = inquirer.text(message="requires-python:", default=defaults.requires_python, mandatory=True).execute()
     homepage = inquirer.text(message="Home page:").execute()
-    dependencies = []
-
-    if inquirer.confirm(message="Add dependencies?", default=True).execute():
-        dependencies = collect_dependencies()
 
     return SimpleNamespace(
         name=name,
@@ -79,17 +75,8 @@ def collect_metadata():
         license=license_name,
         requires_python=requires_python,
         homepage=homepage,
-        dependencies=dependencies
+        dependencies=[],
     )
-
-
-def collect_dependencies():
-    dependencies = []
-    name = packages.prompt_a_package()
-    while name is not None:
-        dependencies.append(name)
-        name = packages.prompt_a_package(True)
-    return dependencies
 
 
 def get_defaults():
