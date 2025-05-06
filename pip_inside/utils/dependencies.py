@@ -228,7 +228,7 @@ class Dependencies:
 
             groups = group_by_extras(dist.requires)
             for extra in extras:
-                for name in groups.get(extra):
+                for name in groups.get(extra) or []:
                     r = Requirement(name)
                     dep = self._direct_dependencies.get(r.name)
                     specs, group = (str(r.specifier), None) if dep is None else (dep.specs or str(r.specifier), dep.group)
